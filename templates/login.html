@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — SuperCar Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red: #E8170A;
+            --gold: #C9A84C;
+            --bg: #080808;
+            --bg2: #111111;
+            --bg3: #1A1A1A;
+            --border: #2A2A2A;
+            --text: #F0F0F0;
+            --text-dim: #888;
+            --text-muted: #555;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Rajdhani', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Background grid */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(232,23,10,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(232,23,10,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+        }
+
+        /* Glow orb */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -20%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(232,23,10,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .split {
+            display: flex;
+            width: 100%;
+            max-width: 1000px;
+            min-height: 580px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Left side — branding */
+        .brand-side {
+            flex: 1;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-right: none;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .brand-side::before {
+            content: '';
+            position: absolute;
+            bottom: -40px; right: -40px;
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(232,23,10,0.06) 0%, transparent 70%);
+        }
+
+        .brand-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.4rem;
+            letter-spacing: 4px;
+            line-height: 1;
+        }
+
+        .brand-logo span { color: var(--red); }
+
+        .brand-tagline {
+            font-size: 0.75rem;
+            letter-spacing: 3px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+
+        .brand-specs {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .spec-item {}
+        .spec-label {
+            font-size: 0.65rem;
+            letter-spacing: 3px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .spec-value {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.1rem;
+            color: var(--gold);
+        }
+
+        .brand-bottom {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        /* Right side — form */
+        .form-side {
+            width: 380px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            letter-spacing: 4px;
+            margin-bottom: 0.3rem;
+        }
+
+        .form-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+
+        .form-group { margin-bottom: 1.2rem; }
+
+        label {
+            display: block;
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        input {
+            width: 100%;
+            background: #0D0D0D;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 11px 14px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus { border-color: var(--red); }
+        input::placeholder { color: var(--text-muted); }
+
+        .btn-submit {
+            width: 100%;
+            padding: 13px;
+            background: var(--red);
+            color: white;
+            border: none;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 0.5rem;
+            clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+        }
+
+        .btn-submit:hover { background: #FF2010; }
+
+        .form-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .form-link a {
+            color: var(--red);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .alert-error {
+            background: rgba(232,23,10,0.1);
+            border: 1px solid rgba(232,23,10,0.3);
+            color: #FF6B6B;
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            margin-bottom: 1.2rem;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--red); }
+    </style>
+</head>
+<body>
+    <div class="split">
+        <div class="brand-side">
+            <div>
+                <div class="brand-logo">SUPER<span>CAR</span><br>BUILDER</div>
+                <div class="brand-tagline">Configure your dream machine</div>
+            </div>
+            <div class="brand-specs">
+                <div class="spec-item">
+                    <div class="spec-label">Presupuesto inicial</div>
+                    <div class="spec-value">€500,000</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Marcas disponibles</div>
+                    <div class="spec-value">Ferrari · Lamborghini · Porsche · McLaren · Bugatti</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">IA Integrada</div>
+                    <div class="spec-value">Asesor experto en tiempo real</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-label">Puntuación</div>
+                    <div class="spec-value">Velocidad · Estética · Reventa</div>
+                </div>
+            </div>
+            <div class="brand-bottom">© 2024 SuperCar Builder — Portfolio Project</div>
+        </div>
+        <div class="form-side">
+            <div class="form-title">ACCEDER</div>
+            <div class="form-subtitle">Entra a tu garaje</div>
+
+            {% if error %}
+            <div class="alert-error">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('login') }}">
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <input type="text" name="username" placeholder="tu_nombre" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-submit">ENTRAR AL GARAJE</button>
+            </form>
+
+            <div class="form-link">
+                ¿Sin cuenta? <a href="{{ url_for('register') }}">Regístrate aquí</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

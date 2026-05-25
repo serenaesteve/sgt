@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro — SuperCar Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red: #E8170A;
+            --gold: #C9A84C;
+            --bg: #080808;
+            --bg2: #111111;
+            --border: #2A2A2A;
+            --text: #F0F0F0;
+            --text-dim: #888;
+            --text-muted: #555;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Rajdhani', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(232,23,10,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(232,23,10,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+        }
+
+        .split {
+            display: flex;
+            width: 100%;
+            max-width: 1000px;
+            min-height: 620px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand-side {
+            flex: 1;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-right: none;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .brand-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.4rem;
+            letter-spacing: 4px;
+            line-height: 1;
+        }
+        .brand-logo span { color: var(--red); }
+        .brand-tagline {
+            font-size: 0.75rem;
+            letter-spacing: 3px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+
+        .welcome-text {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            line-height: 1.7;
+        }
+        .welcome-text strong { color: var(--gold); }
+
+        .budget-display {
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            position: relative;
+        }
+        .budget-display::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 3px; height: 100%;
+            background: var(--gold);
+        }
+        .budget-label {
+            font-size: 0.65rem;
+            letter-spacing: 3px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .budget-amount {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+            color: var(--gold);
+        }
+        .budget-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .brand-bottom { font-size: 0.7rem; color: var(--text-muted); }
+
+        .form-side {
+            width: 400px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            letter-spacing: 4px;
+            margin-bottom: 0.3rem;
+        }
+        .form-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+
+        .form-group { margin-bottom: 1.1rem; }
+        label {
+            display: block;
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        input {
+            width: 100%;
+            background: #0D0D0D;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 11px 14px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus { border-color: var(--red); }
+        input::placeholder { color: var(--text-muted); }
+
+        .btn-submit {
+            width: 100%;
+            padding: 13px;
+            background: var(--red);
+            color: white;
+            border: none;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 0.5rem;
+            clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+        }
+        .btn-submit:hover { background: #FF2010; }
+
+        .form-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+        .form-link a { color: var(--red); text-decoration: none; font-weight: 600; }
+
+        .alert-error {
+            background: rgba(232,23,10,0.1);
+            border: 1px solid rgba(232,23,10,0.3);
+            color: #FF6B6B;
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            margin-bottom: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="split">
+        <div class="brand-side">
+            <div>
+                <div class="brand-logo">SUPER<span>CAR</span><br>BUILDER</div>
+                <div class="brand-tagline">Configure your dream machine</div>
+            </div>
+            <div class="welcome-text">
+                Crea tu cuenta y empieza con <strong>€500.000</strong> de presupuesto. Configura tu supercar ideal eligiendo marca, motor, color y extras — con precios reales del mercado.
+            </div>
+            <div class="budget-display">
+                <div class="budget-label">Presupuesto de bienvenida</div>
+                <div class="budget-amount">€500,000</div>
+                <div class="budget-desc">Para construir el coche de tus sueños</div>
+            </div>
+            <div class="brand-bottom">© 2024 SuperCar Builder — Portfolio Project</div>
+        </div>
+        <div class="form-side">
+            <div class="form-title">REGISTRO</div>
+            <div class="form-subtitle">Crea tu garaje</div>
+
+            {% if error %}
+            <div class="alert-error">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('register') }}">
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <input type="text" name="username" placeholder="piloto_veloce" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" placeholder="tu@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" name="password" placeholder="••••••••" required minlength="6">
+                </div>
+                <button type="submit" class="btn-submit">CREAR MI GARAJE</button>
+            </form>
+
+            <div class="form-link">
+                ¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesión</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
