@@ -1,1099 +1,1019 @@
 {% extends "base.html" %}
-{% block title %}Configurador — SuperCar Builder{% endblock %}
+{% block title %}APEX — Configurador 3D{% endblock %}
 
 {% block extra_css %}
 <style>
-.builder-layout {
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 1.5rem;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 2rem;
+.builder-root {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  height: calc(100vh - 56px);
+  overflow: hidden;
 }
 
-/* STEPS */
-.steps-nav {
-    display: flex;
-    gap: 0;
-    margin-bottom: 1.5rem;
-    border: 1px solid var(--border);
+/* ── 3D CANVAS ── */
+.canvas-zone {
+  position: relative;
+  background: #060606;
+  overflow: hidden;
+  cursor: grab;
+}
+.canvas-zone:active { cursor: grabbing; }
+.canvas-zone canvas { width: 100%!important; height: 100%!important; }
+
+/* Brand bar */
+.brand-strip {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  border-bottom: 1px solid #1a1a1a;
+  z-index: 10;
+  background: rgba(6,6,6,0.85);
+  backdrop-filter: blur(8px);
+}
+
+.brand-tab {
+  flex: 1;
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  border-right: 1px solid #1a1a1a;
+  transition: all 0.2s;
+  font-family: var(--speed);
+}
+
+.brand-tab:last-child { border-right: none; }
+.brand-tab:hover { color: #777; background: rgba(255,255,255,0.02); }
+.brand-tab.active { color: #fff; border-bottom: 2px solid var(--red); }
+
+/* Car label overlay */
+.car-overlay {
+  position: absolute;
+  bottom: 24px;
+  left: 28px;
+  pointer-events: none;
+}
+
+.co-brand {
+  font-size: 10px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--ash);
+  margin-bottom: 2px;
+}
+
+.co-name {
+  font-family: var(--speed);
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--white);
+  line-height: 1;
+  text-shadow: 0 0 60px rgba(232,23,10,0.25);
+}
+
+.co-engine {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ash);
+  margin-top: 4px;
+}
+
+/* Drag hint */
+.drag-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: #222;
+  text-transform: uppercase;
+  pointer-events: none;
+  transition: opacity 0.6s;
+}
+
+/* Price overlay top-right */
+.price-overlay {
+  position: absolute;
+  top: 56px;
+  right: 16px;
+  text-align: right;
+  pointer-events: none;
+}
+
+.po-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ash);
+}
+
+.po-price {
+  font-family: var(--speed);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--gold);
+  line-height: 1;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  background: var(--black2);
+  border-left: 1px solid var(--wire);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sb-section {
+  padding: 1.2rem;
+  border-bottom: 1px solid var(--wire);
+}
+
+.sb-label {
+  font-size: 10px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--ash);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+/* Step tabs */
+.step-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border: 1px solid var(--wire);
+  margin-bottom: 0;
 }
 
 .step-tab {
-    flex: 1;
-    padding: 12px 8px;
-    text-align: center;
-    font-size: 0.65rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    font-weight: 700;
-    color: var(--text-muted);
-    cursor: pointer;
-    border-right: 1px solid var(--border);
-    transition: all 0.2s;
-    position: relative;
+  padding: 10px 4px;
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ash);
+  cursor: pointer;
+  border-right: 1px solid var(--wire);
+  background: transparent;
+  border-top: none; border-bottom: none; border-left: none;
+  transition: all 0.2s;
+  font-family: var(--body);
+  font-weight: 600;
 }
 
 .step-tab:last-child { border-right: none; }
+.step-tab:hover { color: var(--snow); background: var(--black3); }
+.step-tab.active { color: var(--white); background: var(--black3); position: relative; }
+.step-tab.active::after { content:''; position:absolute; bottom:0; left:0; width:100%; height:2px; background:var(--red); }
+.step-tab.done { color: var(--red); }
 
-.step-tab.active {
-    color: var(--white);
-    background: var(--bg3);
-}
-
-.step-tab.done {
-    color: var(--red);
-}
-
-.step-tab.active::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0;
-    width: 100%; height: 2px;
-    background: var(--red);
-}
-
+/* Step num */
 .step-num {
-    display: block;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 1rem;
-    margin-bottom: 2px;
-    color: inherit;
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  margin-bottom: 2px;
 }
 
-/* PANELS */
+/* Panels */
 .step-panel { display: none; }
 .step-panel.active { display: block; }
 
-.panel-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.8rem;
-    letter-spacing: 3px;
-    margin-bottom: 0.3rem;
+/* Model buttons */
+.model-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
 }
 
-.panel-subtitle {
-    color: var(--text-dim);
-    font-size: 0.78rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 1.5rem;
+.model-btn {
+  padding: 10px 8px;
+  background: var(--black3);
+  border: 1px solid var(--wire);
+  color: var(--ash);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--body);
+  font-weight: 600;
+  text-align: center;
 }
 
-/* Brand/Model grid */
-.option-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 0.8rem;
-}
-
-.option-card {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    padding: 1.2rem 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
-    position: relative;
-}
-
-.option-card:hover {
-    border-color: #444;
-    background: var(--bg4);
-}
-
-.option-card.selected {
-    border-color: var(--red);
-    background: rgba(232,23,10,0.06);
-}
-
-.option-card.selected::before {
-    content: '✓';
-    position: absolute;
-    top: 6px; right: 8px;
-    font-size: 0.7rem;
-    color: var(--red);
-}
-
-.option-icon {
-    font-size: 2rem;
-    margin-bottom: 8px;
-    display: block;
-}
-
-.option-name {
-    font-weight: 700;
-    font-size: 0.95rem;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-}
-
-.option-price {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.75rem;
-    color: var(--gold);
-}
-
-.option-bonuses {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    margin-top: 6px;
-    flex-wrap: wrap;
-}
-
-.bonus-tag {
-    font-size: 0.6rem;
-    letter-spacing: 1px;
-    padding: 2px 6px;
-    background: var(--bg);
-}
-
-.bonus-speed { color: var(--red); border: 1px solid rgba(232,23,10,0.3); }
-.bonus-aesthetic { color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
-.bonus-resale { color: #4CAF50; border: 1px solid rgba(76,175,80,0.3); }
+.model-btn:hover { background: var(--black4, #1e1e1e); color: var(--snow); }
+.model-btn.sel { border-color: var(--red); color: var(--white); background: rgba(232,23,10,0.06); }
 
 /* Engine list */
-.engine-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
+.engine-item {
+  padding: 10px 12px;
+  background: var(--black3);
+  border: 1px solid var(--wire);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.engine-card {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    padding: 1.2rem 1.4rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
+.engine-item:hover { border-color: #333; }
+.engine-item.sel { border-color: var(--red); background: rgba(232,23,10,0.05); }
+.engine-name { font-size: 12px; font-weight: 600; color: var(--snow); }
+.engine-price { font-family: var(--mono); font-size: 11px; color: var(--gold); }
+.engine-tags { display: flex; gap: 4px; margin-top: 4px; }
+
+.tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  letter-spacing: 1px;
 }
 
-.engine-card:hover { border-color: #444; }
-.engine-card.selected {
-    border-color: var(--red);
-    background: rgba(232,23,10,0.06);
+.tag-spd { background: rgba(232,23,10,0.12); color: var(--red); }
+.tag-res { background: rgba(61,220,132,0.1); color: var(--green); }
+.tag-aes { background: rgba(201,168,76,0.1); color: var(--gold); }
+
+/* Color dots */
+.color-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
-.engine-name {
-    font-weight: 700;
-    font-size: 1rem;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
+.cdot {
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  position: relative;
 }
 
-.engine-stats {
-    display: flex;
-    gap: 8px;
-}
-
-/* Colors */
-.color-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 0.8rem;
-}
-
-.color-swatch {
-    aspect-ratio: 1;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: all 0.2s;
-    position: relative;
-    display: flex;
-    align-items: flex-end;
-    padding: 6px;
-}
-
-.color-swatch:hover { transform: scale(1.05); }
-.color-swatch.selected { border-color: white; }
-
-.color-swatch-name {
-    font-size: 0.6rem;
-    letter-spacing: 1px;
-    color: white;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-    font-weight: 700;
-    line-height: 1.2;
-}
-
-.color-price {
-    position: absolute;
-    top: 4px; right: 4px;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.6rem;
-    background: rgba(0,0,0,0.7);
-    padding: 1px 4px;
-    color: var(--gold);
+.cdot:hover { transform: scale(1.1); }
+.cdot.sel { border-color: var(--white); }
+.cdot.sel::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border: 1px solid rgba(255,255,255,0.2);
 }
 
 /* Extras */
-.extras-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.8rem;
+.extra-item {
+  padding: 10px 12px;
+  background: var(--black3);
+  border: 1px solid var(--wire);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.extra-card {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    padding: 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
+.extra-item:hover { border-color: #333; }
+.extra-item.sel { border-color: var(--gold); background: rgba(201,168,76,0.05); }
+.extra-name { font-size: 12px; font-weight: 600; }
+.extra-price { font-family: var(--mono); font-size: 11px; color: var(--gold); }
+
+/* Score preview */
+.score-mini { display: flex; flex-direction: column; gap: 7px; }
+.sm-row { display: flex; align-items: center; gap: 8px; }
+.sm-lbl { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ash); width: 60px; }
+.sm-track { flex: 1; height: 2px; background: var(--black4, #1e1e1e); }
+.sm-fill { height: 100%; transition: width 0.6s; }
+.sm-num { font-family: var(--mono); font-size: 11px; width: 24px; text-align: right; }
+
+/* AI section */
+.ai-box {
+  border: 1px solid var(--wire);
+  cursor: pointer;
 }
 
-.extra-card:hover { border-color: #444; }
-.extra-card.selected {
-    border-color: var(--gold);
-    background: rgba(201,168,76,0.05);
+.ai-head {
+  padding: 0.8rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ash);
+  border-bottom: 1px solid var(--wire);
+  font-weight: 600;
+  transition: background 0.2s;
 }
 
-.extra-card.selected::before {
-    content: '✓';
-    position: absolute;
-    top: 6px; right: 8px;
-    color: var(--gold);
-    font-size: 0.8rem;
+.ai-head:hover { background: var(--black3); }
+
+.ai-body {
+  padding: 1rem;
+  font-size: 13px;
+  color: var(--ash);
+  line-height: 1.6;
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.extra-name {
-    font-weight: 700;
-    font-size: 0.9rem;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-}
+.ai-dots { display: flex; gap: 4px; }
+.ai-dot { width: 4px; height: 4px; background: var(--red); border-radius: 50%; animation: aipulse 1.4s infinite; }
+.ai-dot:nth-child(2) { animation-delay: 0.2s; }
+.ai-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes aipulse { 0%,80%,100%{opacity:0.15;} 40%{opacity:1;} }
 
-.extra-price-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* Nav buttons */
-.step-nav {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
-}
-
-/* SIDEBAR */
-.sidebar {}
-
-.config-summary {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    position: sticky;
-    top: 80px;
-}
-
-.summary-header {
-    padding: 1rem 1.2rem;
-    border-bottom: 1px solid var(--border);
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1rem;
-    letter-spacing: 3px;
-    color: var(--text-dim);
-}
-
-.summary-body { padding: 1.2rem; }
-
-.summary-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.82rem;
-}
-
-.summary-row:last-child { border-bottom: none; }
-
-.summary-key {
-    color: var(--text-muted);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    font-size: 0.7rem;
-}
-
-.summary-val {
-    text-align: right;
-    font-weight: 600;
-    max-width: 60%;
-    color: var(--text);
+/* Bottom save area */
+.sb-bottom {
+  padding: 1.2rem;
+  margin-top: auto;
+  border-top: 1px solid var(--wire);
+  background: var(--black2);
 }
 
 .price-breakdown {
-    margin-top: 1rem;
-    padding: 1rem;
-    background: var(--bg3);
-    border: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ash);
+  margin-bottom: 1rem;
 }
 
-.price-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.78rem;
-    padding: 3px 0;
-    color: var(--text-dim);
-    font-family: 'Share Tech Mono', monospace;
+.pb-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
 }
 
-.price-total {
-    border-top: 1px solid var(--border);
-    margin-top: 8px;
-    padding-top: 8px;
-    font-size: 1rem;
-    color: var(--gold);
-    font-weight: 700;
+.pb-total {
+  border-top: 1px solid var(--wire);
+  margin-top: 6px;
+  padding-top: 6px;
+  color: var(--gold);
+  font-size: 14px;
 }
 
-.budget-remaining {
-    padding: 1rem;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    margin-top: 0.8rem;
-    text-align: center;
+.budget-left {
+  font-family: var(--speed);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-align: center;
+  margin-bottom: 1rem;
 }
 
-.budget-remaining-label {
-    font-size: 0.65rem;
-    letter-spacing: 2px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    margin-bottom: 4px;
+.budget-left small {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--ash);
+  font-family: var(--body);
+  margin-top: 2px;
 }
 
-.budget-remaining-val {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.8rem;
-    letter-spacing: 2px;
+/* Build name input */
+.build-name-inp {
+  width: 100%;
+  background: var(--black3);
+  border: 1px solid var(--wire);
+  color: var(--white);
+  padding: 10px 12px;
+  font-family: var(--speed);
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  outline: none;
+  margin-bottom: 10px;
+}
+.build-name-inp:focus { border-color: var(--red); }
+
+.btn-save {
+  width: 100%;
+  padding: 13px;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  font-family: var(--speed);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Scores preview */
-.scores-preview {
-    margin-top: 0.8rem;
-    padding: 1rem;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-}
-
-.scores-title {
-    font-size: 0.65rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 10px;
-}
-
-.score-preview-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
-.score-preview-label {
-    font-size: 0.65rem;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    width: 65px;
-}
-
-.score-preview-track {
-    flex: 1;
-    height: 3px;
-    background: var(--bg4);
-}
-
-.score-preview-num {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.72rem;
-    width: 28px;
-    text-align: right;
-}
-
-/* AI advice */
-.ai-section {
-    margin-top: 0.8rem;
-    border: 1px solid var(--border);
-}
-
-.ai-header {
-    padding: 0.8rem 1rem;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.75rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.ai-header:hover { background: var(--bg3); }
-
-.ai-body {
-    padding: 1rem;
-    font-size: 0.82rem;
-    color: var(--text-dim);
-    line-height: 1.6;
-    letter-spacing: 0.5px;
-    min-height: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-}
-
-.ai-loading {
-    display: flex;
-    gap: 4px;
-    align-items: center;
-}
-
-.ai-dot {
-    width: 4px; height: 4px;
-    background: var(--red);
-    border-radius: 50%;
-    animation: pulse 1.4s infinite;
-}
-
-.ai-dot:nth-child(2) { animation-delay: 0.2s; }
-.ai-dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes pulse {
-    0%, 80%, 100% { opacity: 0.2; }
-    40% { opacity: 1; }
-}
-
-/* Name input */
-.build-name-section {
-    margin-bottom: 1.5rem;
-    padding: 1.2rem;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-}
-
-.build-name-label {
-    font-size: 0.7rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 6px;
-}
-
-.build-name-input {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 14px;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.2rem;
-    letter-spacing: 2px;
-    outline: none;
-}
-
-.build-name-input:focus { border-color: var(--red); }
+.btn-save:hover { background: #ff2010; }
+.btn-save:disabled { background: var(--ash); cursor: not-allowed; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="builder-layout">
-    <!-- MAIN CONFIGURATOR -->
-    <div class="main-panel">
-        <div class="steps-nav">
-            <div class="step-tab active" id="tab-1" onclick="goToStep(1)">
-                <span class="step-num">01</span>MARCA
-            </div>
-            <div class="step-tab" id="tab-2" onclick="goToStep(2)">
-                <span class="step-num">02</span>MODELO
-            </div>
-            <div class="step-tab" id="tab-3" onclick="goToStep(3)">
-                <span class="step-num">03</span>MOTOR
-            </div>
-            <div class="step-tab" id="tab-4" onclick="goToStep(4)">
-                <span class="step-num">04</span>COLOR
-            </div>
-            <div class="step-tab" id="tab-5" onclick="goToStep(5)">
-                <span class="step-num">05</span>EXTRAS
-            </div>
-            <div class="step-tab" id="tab-6" onclick="goToStep(6)">
-                <span class="step-num">06</span>GUARDAR
-            </div>
-        </div>
+<div class="builder-root">
 
-        <!-- STEP 1: MARCA -->
-        <div class="step-panel active" id="step-1">
-            <div class="panel-title">ELIGE TU MARCA</div>
-            <div class="panel-subtitle">Cada marca tiene su carácter y rango de precio</div>
-            <div class="option-grid" id="brand-grid"></div>
-            <div class="step-nav">
-                <div></div>
-                <button class="btn btn-primary" onclick="goToStep(2)" id="btn-next-1" disabled>SIGUIENTE →</button>
-            </div>
-        </div>
+  <!-- 3D CANVAS -->
+  <div class="canvas-zone" id="canvas-zone">
+    <div class="brand-strip" id="brand-strip"></div>
+    <div id="three-mount"></div>
+    <div class="drag-hint" id="drag-hint">ARRASTRA PARA ROTAR</div>
 
-        <!-- STEP 2: MODELO -->
-        <div class="step-panel" id="step-2">
-            <div class="panel-title">ELIGE EL MODELO</div>
-            <div class="panel-subtitle" id="model-subtitle">Selecciona un modelo de la marca elegida</div>
-            <div class="option-grid" id="model-grid"></div>
-            <div class="step-nav">
-                <button class="btn btn-ghost" onclick="goToStep(1)">← ATRÁS</button>
-                <button class="btn btn-primary" onclick="goToStep(3)" id="btn-next-2" disabled>SIGUIENTE →</button>
-            </div>
-        </div>
-
-        <!-- STEP 3: MOTOR -->
-        <div class="step-panel" id="step-3">
-            <div class="panel-title">ELIGE EL MOTOR</div>
-            <div class="panel-subtitle">El corazón de tu máquina</div>
-            <div class="engine-list" id="engine-list"></div>
-            <div class="step-nav">
-                <button class="btn btn-ghost" onclick="goToStep(2)">← ATRÁS</button>
-                <button class="btn btn-primary" onclick="goToStep(4)" id="btn-next-3" disabled>SIGUIENTE →</button>
-            </div>
-        </div>
-
-        <!-- STEP 4: COLOR -->
-        <div class="step-panel" id="step-4">
-            <div class="panel-title">ELIGE EL COLOR</div>
-            <div class="panel-subtitle">El color también impacta en la estética y el precio</div>
-            <div class="color-grid" id="color-grid"></div>
-            <div style="margin-top:1rem;padding:1rem;background:var(--bg3);border:1px solid var(--border);" id="color-info">
-                <div style="font-size:0.75rem;color:var(--text-muted);letter-spacing:1px;">Selecciona un color para ver detalles</div>
-            </div>
-            <div class="step-nav">
-                <button class="btn btn-ghost" onclick="goToStep(3)">← ATRÁS</button>
-                <button class="btn btn-primary" onclick="goToStep(5)" id="btn-next-4" disabled>SIGUIENTE →</button>
-            </div>
-        </div>
-
-        <!-- STEP 5: EXTRAS -->
-        <div class="step-panel" id="step-5">
-            <div class="panel-title">EXTRAS Y OPCIONALES</div>
-            <div class="panel-subtitle">Potencia, estética y valor de reventa a la carta</div>
-            <div class="extras-grid" id="extras-grid"></div>
-            <div class="step-nav">
-                <button class="btn btn-ghost" onclick="goToStep(4)">← ATRÁS</button>
-                <button class="btn btn-primary" onclick="goToStep(6)">REVISAR BUILD →</button>
-            </div>
-        </div>
-
-        <!-- STEP 6: GUARDAR -->
-        <div class="step-panel" id="step-6">
-            <div class="panel-title">GUARDAR BUILD</div>
-            <div class="panel-subtitle">Ponle nombre a tu máquina</div>
-
-            <div class="build-name-section">
-                <div class="build-name-label">Nombre del build</div>
-                <input class="build-name-input" type="text" id="build-name-input" placeholder="MI FERRARI ROSSO">
-            </div>
-
-            <!-- Final summary -->
-            <div id="final-summary" style="background:var(--bg3);border:1px solid var(--border);padding:1.5rem;margin-bottom:1.5rem;"></div>
-
-            <!-- Final scores -->
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;" id="final-scores-grid"></div>
-
-            <div class="step-nav">
-                <button class="btn btn-ghost" onclick="goToStep(5)">← ATRÁS</button>
-                <button class="btn btn-primary" onclick="saveBuild()" id="save-btn">💾 GUARDAR EN GARAJE</button>
-            </div>
-        </div>
+    <div class="car-overlay">
+      <div class="co-brand" id="co-brand">Ferrari</div>
+      <div class="co-name" id="co-name">F8 Tributo</div>
+      <div class="co-engine" id="co-engine">3.9L V8 BiTurbo 720CV</div>
     </div>
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-        <div class="config-summary">
-            <div class="summary-header">CONFIGURACIÓN ACTUAL</div>
-            <div class="summary-body">
-                <div class="summary-row">
-                    <span class="summary-key">Marca</span>
-                    <span class="summary-val" id="sum-brand">—</span>
-                </div>
-                <div class="summary-row">
-                    <span class="summary-key">Modelo</span>
-                    <span class="summary-val" id="sum-model">—</span>
-                </div>
-                <div class="summary-row">
-                    <span class="summary-key">Motor</span>
-                    <span class="summary-val" id="sum-engine" style="font-size:0.75rem;">—</span>
-                </div>
-                <div class="summary-row">
-                    <span class="summary-key">Color</span>
-                    <span class="summary-val" id="sum-color">—</span>
-                </div>
-                <div class="summary-row">
-                    <span class="summary-key">Extras</span>
-                    <span class="summary-val" id="sum-extras">—</span>
-                </div>
-            </div>
-
-            <div class="price-breakdown" id="price-breakdown">
-                <div style="font-size:0.65rem;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Desglose de precio</div>
-                <div class="price-row"><span>Base</span><span id="pr-base">—</span></div>
-                <div class="price-row"><span>Modelo</span><span id="pr-model">—</span></div>
-                <div class="price-row"><span>Motor</span><span id="pr-engine">—</span></div>
-                <div class="price-row"><span>Color</span><span id="pr-color">—</span></div>
-                <div class="price-row"><span>Extras</span><span id="pr-extras">—</span></div>
-                <div class="price-row price-total"><span>TOTAL</span><span id="pr-total">—</span></div>
-            </div>
-
-            <div class="budget-remaining" id="budget-display">
-                <div class="budget-remaining-label">Presupuesto restante</div>
-                <div class="budget-remaining-val" id="budget-val">€{{ "{:,.0f}".format(user.budget) }}</div>
-            </div>
-
-            <div class="scores-preview" id="scores-preview" style="display:none;">
-                <div class="scores-title">Puntuación estimada</div>
-                <div class="score-preview-row">
-                    <span class="score-preview-label">Velocidad</span>
-                    <div class="score-preview-track"><div class="score-fill speed" id="preview-speed-bar" style="width:0%"></div></div>
-                    <span class="score-preview-num text-red" id="preview-speed">—</span>
-                </div>
-                <div class="score-preview-row">
-                    <span class="score-preview-label">Estética</span>
-                    <div class="score-preview-track"><div class="score-fill aesthetic" id="preview-aesthetic-bar" style="width:0%"></div></div>
-                    <span class="score-preview-num text-gold" id="preview-aesthetic">—</span>
-                </div>
-                <div class="score-preview-row">
-                    <span class="score-preview-label">Reventa</span>
-                    <div class="score-preview-track"><div class="score-fill resale" id="preview-resale-bar" style="width:0%"></div></div>
-                    <span class="score-preview-num" style="color:#4CAF50" id="preview-resale">—</span>
-                </div>
-            </div>
-
-            <div class="ai-section">
-                <div class="ai-header" onclick="getAiAdvice()">
-                    <span>🤖</span>
-                    <span>CONSEJO DEL EXPERTO</span>
-                    <span style="margin-left:auto;font-size:0.7rem;">▶ CONSULTAR</span>
-                </div>
-                <div class="ai-body" id="ai-advice-body">
-                    <span style="color:var(--text-muted);font-size:0.75rem;">Pulsa para recibir consejo de la IA sobre tu configuración actual</span>
-                </div>
-            </div>
-        </div>
+    <div class="price-overlay">
+      <div class="po-label">Precio total</div>
+      <div class="po-price" id="po-price">€220,000</div>
     </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- Step tabs -->
+    <div class="sb-section" style="padding:0;">
+      <div class="step-tabs">
+        <button class="step-tab active" id="tab-1" onclick="goStep(1)"><span class="step-num">01</span>Modelo</button>
+        <button class="step-tab" id="tab-2" onclick="goStep(2)"><span class="step-num">02</span>Motor</button>
+        <button class="step-tab" id="tab-3" onclick="goStep(3)"><span class="step-num">03</span>Color</button>
+        <button class="step-tab" id="tab-4" onclick="goStep(4)"><span class="step-num">04</span>Extras</button>
+        <button class="step-tab" id="tab-5" onclick="goStep(5)"><span class="step-num">05</span>Build</button>
+      </div>
+    </div>
+
+    <!-- Step 1: Modelo -->
+    <div class="sb-section step-panel active" id="step-1">
+      <div class="sb-label">Elige modelo</div>
+      <div class="model-grid" id="model-grid"></div>
+    </div>
+
+    <!-- Step 2: Motor -->
+    <div class="sb-section step-panel" id="step-2">
+      <div class="sb-label">Elige motor</div>
+      <div id="engine-list"></div>
+    </div>
+
+    <!-- Step 3: Color -->
+    <div class="sb-section step-panel" id="step-3">
+      <div class="sb-label">Color de carrocería</div>
+      <div class="color-row" id="color-row"></div>
+      <div style="font-size:12px;color:var(--ash);letter-spacing:1px;" id="color-detail">Selecciona un color</div>
+    </div>
+
+    <!-- Step 4: Extras -->
+    <div class="sb-section step-panel" id="step-4">
+      <div class="sb-label">Extras opcionales</div>
+      <div id="extras-list"></div>
+    </div>
+
+    <!-- Step 5: Guardar -->
+    <div class="sb-section step-panel" id="step-5">
+      <div class="sb-label">Nombre del build</div>
+      <input class="build-name-inp" type="text" id="build-name" placeholder="MI FERRARI F8">
+    </div>
+
+    <!-- Scores preview -->
+    <div class="sb-section">
+      <div class="sb-label">Puntuación estimada</div>
+      <div class="score-mini">
+        <div class="sm-row">
+          <span class="sm-lbl">Velocidad</span>
+          <div class="sm-track"><div class="sm-fill" style="background:var(--red);width:0%" id="sm-sp"></div></div>
+          <span class="sm-num" style="color:var(--red)" id="sm-sp-n">—</span>
+        </div>
+        <div class="sm-row">
+          <span class="sm-lbl">Estética</span>
+          <div class="sm-track"><div class="sm-fill" style="background:var(--gold);width:0%" id="sm-ae"></div></div>
+          <span class="sm-num" style="color:var(--gold)" id="sm-ae-n">—</span>
+        </div>
+        <div class="sm-row">
+          <span class="sm-lbl">Reventa</span>
+          <div class="sm-track"><div class="sm-fill" style="background:var(--green);width:0%" id="sm-re"></div></div>
+          <span class="sm-num" style="color:var(--green)" id="sm-re-n">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI -->
+    <div class="sb-section">
+      <div class="ai-box">
+        <div class="ai-head" onclick="getAI()">
+          <span>⚡</span>
+          <span>Consejo IA</span>
+          <span style="margin-left:auto;font-size:10px;">▶ Consultar</span>
+        </div>
+        <div class="ai-body" id="ai-body">
+          <span style="font-size:12px;color:var(--ash);">Pulsa para recibir consejo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom: price + save -->
+    <div class="sb-bottom">
+      <div class="price-breakdown" id="price-breakdown">
+        <div class="pb-row"><span>Base</span><span id="pb-base">—</span></div>
+        <div class="pb-row"><span>Modelo</span><span id="pb-model">—</span></div>
+        <div class="pb-row"><span>Motor</span><span id="pb-engine">—</span></div>
+        <div class="pb-row"><span>Color</span><span id="pb-color">—</span></div>
+        <div class="pb-row"><span>Extras</span><span id="pb-extras">—</span></div>
+        <div class="pb-row pb-total"><span>Total</span><span id="pb-total">—</span></div>
+      </div>
+      <div class="budget-left" id="budget-left">
+        —
+        <small>presupuesto restante</small>
+      </div>
+      <button class="btn-save" id="btn-save" onclick="saveBuild()">💾 Guardar en garaje</button>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-const CAR_DATA = {{ car_data | tojson }};
-const COLORS = {{ colors | tojson }};
-const EXTRAS = {{ extras | tojson }};
+// ── DATA ──────────────────────────────────────────────────────
+const CAR_DATA = {{ car_data|tojson }};
+const COLORS   = {{ colors|tojson }};
+const EXTRAS   = {{ extras|tojson }};
 const USER_BUDGET = {{ user.budget }};
 
-const BRAND_ICONS = {
-    'Ferrari': '🐎',
-    'Lamborghini': '🐂',
-    'Porsche': '🏎',
-    'McLaren': '🕷',
-    'Bugatti': '👑'
+const BRAND_ORDER = ['Ferrari','Lamborghini','Porsche','McLaren','Bugatti'];
+
+const PROFILES = {
+  Ferrari:     {l:4.6,w:2.0, h:1.15,rake:0.06,hood:0.42,roof:0.38},
+  Lamborghini: {l:4.7,w:2.1, h:1.18,rake:0.10,hood:0.40,roof:0.32},
+  Porsche:     {l:4.5,w:1.85,h:1.30,rake:0.03,hood:0.38,roof:0.44},
+  McLaren:     {l:4.5,w:2.0, h:1.20,rake:0.08,hood:0.38,roof:0.36},
+  Bugatti:     {l:4.5,w:2.0, h:1.18,rake:0.04,hood:0.44,roof:0.40},
 };
 
-let config = {
-    brand: null, model: null, engine: null,
-    color: null, colorHex: '#000000', extras: []
-};
+let cfg = { brand:'Ferrari', model: Object.keys(CAR_DATA['Ferrari'].models)[0],
+            engine: Object.keys(CAR_DATA['Ferrari'].engines)[0],
+            colorIdx:0, extras:[] };
 
-let currentStep = 1;
+// ── THREE.JS ──────────────────────────────────────────────────
+const mount = document.getElementById('three-mount');
+const zone  = document.getElementById('canvas-zone');
 
-// ─── RENDER FUNCTIONS ────────────────────────────────────────
-function renderBrands() {
-    const grid = document.getElementById('brand-grid');
-    grid.innerHTML = '';
-    for (const [brand, data] of Object.entries(CAR_DATA)) {
-        const card = document.createElement('div');
-        card.className = 'option-card' + (config.brand === brand ? ' selected' : '');
-        card.innerHTML = `
-            <span class="option-icon">${BRAND_ICONS[brand] || '🚗'}</span>
-            <div class="option-name">${brand}</div>
-            <div class="option-price">desde €${(data.base_price).toLocaleString('es-ES')}</div>
-        `;
-        card.onclick = () => selectBrand(brand, card);
-        grid.appendChild(card);
+const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.3;
+mount.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x060606);
+scene.fog = new THREE.Fog(0x060606, 18, 35);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+
+// Lights
+scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+const key = new THREE.DirectionalLight(0xffffff, 2.2);
+key.position.set(5,8,5); key.castShadow=true; scene.add(key);
+const fill = new THREE.DirectionalLight(0x4488ff, 0.9);
+fill.position.set(-5,3,-3); scene.add(fill);
+const rim = new THREE.DirectionalLight(0xff2200, 0.7);
+rim.position.set(0,2,-6); scene.add(rim);
+scene.add(new THREE.PointLight(0xffffff, 0.4, 8)).position.set(0,-1,0);
+
+// Ground
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(20,20),
+  new THREE.MeshStandardMaterial({color:0x060606,metalness:0.95,roughness:0.05})
+);
+ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+const grid = new THREE.GridHelper(20,40,0x181818,0x111111);
+grid.position.y=0.001; scene.add(grid);
+
+let carGroup=null, bodyMeshes=[];
+
+function buildCar(){
+  if(carGroup) scene.remove(carGroup);
+  carGroup=new THREE.Group(); bodyMeshes=[];
+  const p=PROFILES[cfg.brand];
+  const col=COLORS[cfg.colorIdx];
+  const L=p.l,W=p.w,H=p.h;
+  const bodyColor=new THREE.Color(col.hex);
+
+  const bodyMat=new THREE.MeshStandardMaterial({color:bodyColor,metalness:col.metal,roughness:0.14,envMapIntensity:1.6});
+  const glassMat=new THREE.MeshStandardMaterial({color:0x88aacc,metalness:0.1,roughness:0.05,transparent:true,opacity:0.3});
+  const darkMat=new THREE.MeshStandardMaterial({color:0x101010,metalness:0.8,roughness:0.3});
+  const chromeMat=new THREE.MeshStandardMaterial({color:0xbbbbbb,metalness:1.0,roughness:0.04});
+  const tireMat=new THREE.MeshStandardMaterial({color:0x0e0e0e,roughness:0.95});
+  const rimMat=new THREE.MeshStandardMaterial({color:0x888888,metalness:0.95,roughness:0.08});
+
+  function add(geo,mat,x,y,z,rx,ry,rz){
+    const m=new THREE.Mesh(geo,mat);
+    m.position.set(x,y,z);
+    if(rx)m.rotation.x=rx; if(ry)m.rotation.y=ry; if(rz)m.rotation.z=rz;
+    m.castShadow=true;
+    return m;
+  }
+
+  // Body base
+  const base=add(new THREE.BoxGeometry(L,H*0.35,W),bodyMat,0,H*0.175+0.05,0);
+  bodyMeshes.push(base); carGroup.add(base);
+
+  // Roof shape (extruded)
+  const rL=L*p.roof, rH=H*0.55, rW=W*0.78;
+  const shape=new THREE.Shape();
+  shape.moveTo(-rL/2,0);
+  shape.bezierCurveTo(-rL/2,rH*0.5,-rL*0.65,rH,0,rH);
+  shape.bezierCurveTo(rL*0.65,rH,rL/2,rH*0.5,rL/2,0);
+  shape.lineTo(-rL/2,0);
+  const roofGeo=new THREE.ExtrudeGeometry(shape,{steps:1,depth:rW,bevelEnabled:false});
+  const roof=new THREE.Mesh(roofGeo,bodyMat);
+  roof.rotation.x=-Math.PI/2; roof.rotation.z=Math.PI/2;
+  roof.position.set(-L*p.rake*0.4, H*0.35+0.05, rW/2);
+  bodyMeshes.push(roof); carGroup.add(roof);
+
+  // Hood
+  const hood=add(new THREE.BoxGeometry(L*p.hood,H*0.07,W*0.92),bodyMat,L*(0.5-p.hood/2)-0.05,H*0.37,0,0,0,-0.06);
+  bodyMeshes.push(hood); carGroup.add(hood);
+
+  // Deck
+  const deck=add(new THREE.BoxGeometry(L*0.24,H*0.06,W*0.88),bodyMat,-L*0.38,H*0.36,0,0,0,0.05);
+  bodyMeshes.push(deck); carGroup.add(deck);
+
+  // Side skirts
+  [-1,1].forEach(s=>{
+    const sk=add(new THREE.BoxGeometry(L*0.68,H*0.055,W*0.04),darkMat,0,H*0.065,s*W*0.50);
+    bodyMeshes.push(sk); carGroup.add(sk);
+  });
+
+  // Windshield
+  const ws=add(new THREE.PlaneGeometry(L*0.20,H*0.30),glassMat,L*0.09,H*0.54,0,-0.55);
+  carGroup.add(ws);
+
+  // Rear window
+  carGroup.add(add(new THREE.PlaneGeometry(L*0.16,H*0.22),glassMat,-L*0.20,H*0.50,0,0.55));
+
+  // Side windows
+  [-1,1].forEach(s=>{
+    const sw=add(new THREE.PlaneGeometry(L*0.26,H*0.20),glassMat,0,H*0.55,s*W*0.485,0,s*Math.PI/2);
+    carGroup.add(sw);
+  });
+
+  // Front bumper
+  carGroup.add(add(new THREE.BoxGeometry(L*0.08,H*0.20,W*0.98),darkMat,L*0.47,H*0.15,0));
+
+  // Headlights
+  [-1,1].forEach(s=>{
+    const hlMat=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xffffaa,emissiveIntensity:0.6,roughness:0.08});
+    carGroup.add(add(new THREE.BoxGeometry(L*0.055,H*0.065,W*0.13),hlMat,L*0.476,H*0.23,s*W*0.37));
+    const drl=add(new THREE.BoxGeometry(L*0.008,H*0.015,W*0.15),new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:1.8}),L*0.48,H*0.19,s*W*0.37);
+    carGroup.add(drl);
+  });
+
+  // Taillights
+  [-1,1].forEach(s=>{
+    const tlMat=new THREE.MeshStandardMaterial({color:0xff0000,emissive:0xff0000,emissiveIntensity:0.9});
+    carGroup.add(add(new THREE.BoxGeometry(L*0.035,H*0.045,W*0.18),tlMat,-L*0.467,H*0.27,s*W*0.37));
+  });
+
+  // Rear bumper
+  carGroup.add(add(new THREE.BoxGeometry(L*0.07,H*0.16,W*0.96),darkMat,-L*0.472,H*0.13,0));
+
+  // Diffuser
+  carGroup.add(add(new THREE.BoxGeometry(L*0.17,H*0.055,W*0.82),darkMat,-L*0.41,H*0.04,0,-0.2));
+
+  // Exhausts
+  [-1,1].forEach(s=>{
+    const ex=new THREE.Mesh(new THREE.CylinderGeometry(0.033,0.038,0.18,12),chromeMat);
+    ex.rotation.z=Math.PI/2;
+    ex.position.set(-L*0.498,H*0.075,s*W*0.26);
+    carGroup.add(ex);
+  });
+
+  // Wing (Lambo / Bugatti)
+  if(cfg.brand==='Lamborghini'||cfg.brand==='Bugatti'){
+    carGroup.add(add(new THREE.BoxGeometry(0.07,0.07,W*0.84),darkMat,-L*0.42,H*0.52,0,0,0,-0.08));
+    [-1,1].forEach(s=>carGroup.add(add(new THREE.BoxGeometry(0.045,0.16,0.045),darkMat,-L*0.42,H*0.44,s*W*0.38)));
+  }
+
+  // Wheels
+  [[L*0.31,W*0.52],[L*0.31,-W*0.52],[-L*0.30,W*0.52],[-L*0.30,-W*0.52]].forEach(([x,z])=>{
+    const tire=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,0.22,32),tireMat);
+    tire.rotation.x=Math.PI/2; tire.position.set(x,0.32,z); tire.castShadow=true; carGroup.add(tire);
+
+    const rim2=new THREE.Mesh(new THREE.CylinderGeometry(0.21,0.21,0.23,10),rimMat);
+    rim2.rotation.x=Math.PI/2; rim2.position.set(x,0.32,z+(z>0?0.01:-0.01)); carGroup.add(rim2);
+
+    const hub=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,0.24,8),chromeMat);
+    hub.rotation.x=Math.PI/2; hub.position.set(x,0.32,z+(z>0?0.02:-0.02)); carGroup.add(hub);
+
+    const cal=new THREE.Mesh(new THREE.BoxGeometry(0.11,0.09,0.065),
+      new THREE.MeshStandardMaterial({color:0xcc0000,metalness:0.7,roughness:0.3}));
+    cal.position.set(x,0.26,z+(z>0?0.13:-0.13)); carGroup.add(cal);
+  });
+
+  scene.add(carGroup);
+}
+
+function updateBodyColor(){
+  if(!bodyMeshes.length)return;
+  const c=COLORS[cfg.colorIdx];
+  const col=new THREE.Color(c.hex);
+  bodyMeshes.forEach(m=>{
+    m.material.color.set(col);
+    m.material.metalness=c.metal;
+    m.material.needsUpdate=true;
+  });
+}
+
+// ── CAMERA ORBIT ──────────────────────────────────────────────
+let rotY=0.4, rotX=0.2, dist=8;
+let isDrag=false, lx=0, ly=0, autoSpin=true, hinted=false;
+
+function setCamera(){
+  const x=dist*Math.sin(rotY)*Math.cos(rotX);
+  const y=dist*Math.sin(rotX)+1;
+  const z=dist*Math.cos(rotY)*Math.cos(rotX);
+  camera.position.set(x,Math.max(y,0.3),z);
+  camera.lookAt(0,0.8,0);
+}
+
+const cv=renderer.domElement;
+cv.addEventListener('mousedown',e=>{isDrag=true;lx=e.clientX;ly=e.clientY;autoSpin=false;if(!hinted){document.getElementById('drag-hint').style.opacity='0';hinted=true;}});
+cv.addEventListener('mousemove',e=>{if(!isDrag)return;rotY+=(e.clientX-lx)*0.008;rotX-=(e.clientY-ly)*0.005;rotX=Math.max(-0.3,Math.min(0.7,rotX));lx=e.clientX;ly=e.clientY;setCamera();});
+cv.addEventListener('mouseup',()=>isDrag=false);
+cv.addEventListener('wheel',e=>{dist=Math.max(3.5,Math.min(14,dist+e.deltaY*0.01));setCamera();autoSpin=false;});
+cv.addEventListener('touchstart',e=>{isDrag=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;autoSpin=false;});
+cv.addEventListener('touchmove',e=>{if(!isDrag)return;rotY+=(e.touches[0].clientX-lx)*0.008;rotX-=(e.touches[0].clientY-ly)*0.005;rotX=Math.max(-0.3,Math.min(0.7,rotX));lx=e.touches[0].clientX;ly=e.touches[0].clientY;setCamera();});
+cv.addEventListener('touchend',()=>isDrag=false);
+
+function resizeRenderer(){
+  const W=zone.clientWidth, H=zone.clientHeight;
+  renderer.setSize(W,H);
+  camera.aspect=W/H;
+  camera.updateProjectionMatrix();
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  if(autoSpin){rotY+=0.004;setCamera();}
+  renderer.render(scene,camera);
+}
+
+// ── UI BUILDERS ───────────────────────────────────────────────
+function buildBrandStrip(){
+  const strip=document.getElementById('brand-strip');
+  strip.innerHTML='';
+  BRAND_ORDER.forEach(b=>{
+    const btn=document.createElement('button');
+    btn.className='brand-tab'+(b===cfg.brand?' active':'');
+    btn.textContent=b;
+    btn.onclick=()=>selectBrand(b);
+    strip.appendChild(btn);
+  });
+}
+
+function buildModelGrid(){
+  const g=document.getElementById('model-grid');
+  g.innerHTML='';
+  Object.keys(CAR_DATA[cfg.brand].models).forEach(m=>{
+    const md=CAR_DATA[cfg.brand].models[m];
+    const btn=document.createElement('button');
+    btn.className='model-btn'+(m===cfg.model?' sel':'');
+    btn.textContent=m;
+    btn.title=md.price>0?'+€'+md.price.toLocaleString('es-ES'):'Incluido';
+    btn.onclick=()=>selectModel(m,btn);
+    g.appendChild(btn);
+  });
+}
+
+function buildEngineList(){
+  const el=document.getElementById('engine-list');
+  el.innerHTML='';
+  Object.keys(CAR_DATA[cfg.brand].engines).forEach(e=>{
+    const ed=CAR_DATA[cfg.brand].engines[e];
+    const div=document.createElement('div');
+    div.className='engine-item'+(e===cfg.engine?' sel':'');
+    div.innerHTML=`<div>
+      <div class="engine-name">${e}</div>
+      <div class="engine-tags">
+        <span class="tag tag-spd">V +${ed.speed_bonus}</span>
+        <span class="tag tag-res">R +${ed.resale_bonus}</span>
+      </div>
+    </div>
+    <div class="engine-price">${ed.price>0?'+€'+ed.price.toLocaleString('es-ES'):'Incluido'}</div>`;
+    div.onclick=()=>selectEngine(e,div);
+    el.appendChild(div);
+  });
+}
+
+function buildColorRow(){
+  const row=document.getElementById('color-row');
+  row.innerHTML='';
+  COLORS.forEach((c,i)=>{
+    const d=document.createElement('div');
+    d.className='cdot'+(i===cfg.colorIdx?' sel':'');
+    d.style.background=c.hex;
+    d.title=c.name;
+    d.onclick=()=>selectColor(i,d);
+    row.appendChild(d);
+  });
+}
+
+function buildExtrasList(){
+  const el=document.getElementById('extras-list');
+  el.innerHTML='';
+  EXTRAS.forEach(ex=>{
+    const div=document.createElement('div');
+    div.className='extra-item'+(cfg.extras.includes(ex.id)?' sel':'');
+    div.innerHTML=`<div>
+      <div class="extra-name">${ex.name}</div>
+      <div class="engine-tags">
+        ${ex.speed_bonus>0?`<span class="tag tag-spd">V +${ex.speed_bonus}</span>`:''}
+        ${ex.aesthetic_bonus>0?`<span class="tag tag-aes">E +${ex.aesthetic_bonus}</span>`:''}
+        ${ex.resale_bonus>0?`<span class="tag tag-res">R +${ex.resale_bonus}</span>`:''}
+      </div>
+    </div>
+    <div class="extra-price">+€${ex.price.toLocaleString('es-ES')}</div>`;
+    div.onclick=()=>toggleExtra(ex,div);
+    el.appendChild(div);
+  });
+}
+
+// ── SELECTORS ─────────────────────────────────────────────────
+function selectBrand(b){
+  cfg.brand=b;
+  cfg.model=Object.keys(CAR_DATA[b].models)[0];
+  cfg.engine=Object.keys(CAR_DATA[b].engines)[0];
+  document.querySelectorAll('.brand-tab').forEach(t=>t.classList.toggle('active',t.textContent===b));
+  buildModelGrid(); buildEngineList();
+  buildCar(); updateUI();
+  autoSpin=true; rotY=0.4;
+}
+
+function selectModel(m,btn){
+  cfg.model=m;
+  document.querySelectorAll('.model-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  updateUI();
+}
+
+function selectEngine(e,div){
+  cfg.engine=e;
+  document.querySelectorAll('.engine-item').forEach(d=>d.classList.remove('sel'));
+  div.classList.add('sel');
+  updateUI();
+}
+
+function selectColor(i,dot){
+  cfg.colorIdx=i;
+  document.querySelectorAll('.cdot').forEach(d=>d.classList.remove('sel'));
+  dot.classList.add('sel');
+  const c=COLORS[i];
+  document.getElementById('color-detail').textContent=c.name+(c.price>0?' · +€'+c.price.toLocaleString('es-ES'):'');
+  updateBodyColor();
+  updateUI();
+}
+
+function toggleExtra(ex,div){
+  const idx=cfg.extras.indexOf(ex.id);
+  if(idx>-1){cfg.extras.splice(idx,1);div.classList.remove('sel');}
+  else{
+    if(calcTotal()+ex.price>USER_BUDGET){
+      div.style.borderColor='var(--red)';
+      setTimeout(()=>div.style.borderColor='',600);
+      return;
     }
+    cfg.extras.push(ex.id); div.classList.add('sel');
+  }
+  updateUI();
 }
 
-function renderModels(brand) {
-    const grid = document.getElementById('model-grid');
-    grid.innerHTML = '';
-    document.getElementById('model-subtitle').textContent = `Modelos disponibles de ${brand}`;
-    const models = CAR_DATA[brand].models;
-    for (const [model, data] of Object.entries(models)) {
-        const card = document.createElement('div');
-        card.className = 'option-card' + (config.model === model ? ' selected' : '');
-        const extraPrice = data.price > 0 ? `+€${data.price.toLocaleString('es-ES')}` : 'Incluido';
-        card.innerHTML = `
-            <div class="option-name">${model}</div>
-            <div class="option-price">${extraPrice}</div>
-            <div class="option-bonuses">
-                <span class="bonus-tag bonus-speed">V +${data.speed_bonus}</span>
-                <span class="bonus-tag bonus-aesthetic">E +${data.aesthetic_bonus}</span>
-                <span class="bonus-tag bonus-resale">R +${data.resale_bonus}</span>
-            </div>
-        `;
-        card.onclick = () => selectModel(model, card, data);
-        grid.appendChild(card);
-    }
+// ── STEP NAV ──────────────────────────────────────────────────
+function goStep(n){
+  document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.step-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('step-'+n).classList.add('active');
+  document.getElementById('tab-'+n).classList.add('active');
+  for(let i=1;i<n;i++) document.getElementById('tab-'+i).classList.add('done');
+  if(n===5 && !document.getElementById('build-name').value){
+    document.getElementById('build-name').value=cfg.brand.toUpperCase()+' '+cfg.model.toUpperCase();
+  }
 }
 
-function renderEngines(brand) {
-    const list = document.getElementById('engine-list');
-    list.innerHTML = '';
-    const engines = CAR_DATA[brand].engines;
-    for (const [engine, data] of Object.entries(engines)) {
-        const card = document.createElement('div');
-        card.className = 'engine-card' + (config.engine === engine ? ' selected' : '');
-        const price = data.price > 0 ? `+€${data.price.toLocaleString('es-ES')}` : 'Incluido';
-        card.innerHTML = `
-            <div>
-                <div class="engine-name">${engine}</div>
-                <div class="engine-stats">
-                    <span class="bonus-tag bonus-speed">V +${data.speed_bonus}</span>
-                    <span class="bonus-tag bonus-resale">R +${data.resale_bonus}</span>
-                </div>
-            </div>
-            <div style="text-align:right;">
-                <div class="option-price">${price}</div>
-            </div>
-        `;
-        card.onclick = () => selectEngine(engine, card, data);
-        list.appendChild(card);
-    }
+// ── PRICE & SCORES ────────────────────────────────────────────
+function calcTotal(){
+  const bd=CAR_DATA[cfg.brand];
+  let t=bd.base_price;
+  if(cfg.model) t+=(bd.models[cfg.model]?.price||0);
+  if(cfg.engine) t+=(bd.engines[cfg.engine]?.price||0);
+  t+=(COLORS[cfg.colorIdx]?.price||0);
+  cfg.extras.forEach(id=>t+=(EXTRAS.find(e=>e.id===id)?.price||0));
+  return t;
 }
 
-function renderColors() {
-    const grid = document.getElementById('color-grid');
-    grid.innerHTML = '';
-    COLORS.forEach(c => {
-        const sw = document.createElement('div');
-        sw.className = 'color-swatch' + (config.color === c.name ? ' selected' : '');
-        sw.style.background = c.hex;
-        sw.innerHTML = `
-            ${c.price > 0 ? `<div class="color-price">+€${(c.price/1000).toFixed(0)}k</div>` : ''}
-            <div class="color-swatch-name">${c.name}</div>
-        `;
-        sw.onclick = () => selectColor(c, sw);
-        grid.appendChild(sw);
-    });
+function calcScores(){
+  let sp=50,ae=50,re=50;
+  const bd=CAR_DATA[cfg.brand];
+  if(cfg.model){const m=bd.models[cfg.model];sp+=m.speed_bonus;ae+=m.aesthetic_bonus;re+=m.resale_bonus;}
+  if(cfg.engine){const e=bd.engines[cfg.engine];sp+=e.speed_bonus;re+=e.resale_bonus;}
+  const c=COLORS[cfg.colorIdx]; if(c) ae+=c.aesthetic_bonus;
+  cfg.extras.forEach(id=>{const ex=EXTRAS.find(e=>e.id===id);if(ex){sp+=ex.speed_bonus;ae+=ex.aesthetic_bonus;re+=ex.resale_bonus;}});
+  return {sp:Math.min(sp,100),ae:Math.min(ae,100),re:Math.min(re,100)};
 }
 
-function renderExtras() {
-    const grid = document.getElementById('extras-grid');
-    grid.innerHTML = '';
-    EXTRAS.forEach(ex => {
-        const card = document.createElement('div');
-        card.className = 'extra-card' + (config.extras.includes(ex.id) ? ' selected' : '');
-        card.innerHTML = `
-            <div class="extra-name">${ex.name}</div>
-            <div class="extra-price-row">
-                <div class="engine-stats">
-                    ${ex.speed_bonus > 0 ? `<span class="bonus-tag bonus-speed">V +${ex.speed_bonus}</span>` : ''}
-                    ${ex.aesthetic_bonus > 0 ? `<span class="bonus-tag bonus-aesthetic">E +${ex.aesthetic_bonus}</span>` : ''}
-                    ${ex.resale_bonus > 0 ? `<span class="bonus-tag bonus-resale">R +${ex.resale_bonus}</span>` : ''}
-                </div>
-                <div class="option-price">+€${ex.price.toLocaleString('es-ES')}</div>
-            </div>
-        `;
-        card.onclick = () => toggleExtra(ex, card);
-        grid.appendChild(card);
-    });
+function updateUI(){
+  const bd=CAR_DATA[cfg.brand];
+  const md=bd.models[cfg.model]||{};
+  const ed=bd.engines[cfg.engine]||{};
+  const col=COLORS[cfg.colorIdx];
+  const extrasTotal=cfg.extras.reduce((s,id)=>s+(EXTRAS.find(e=>e.id===id)?.price||0),0);
+  const total=calcTotal();
+  const left=USER_BUDGET-total;
+
+  // Overlay
+  document.getElementById('co-brand').textContent=cfg.brand;
+  document.getElementById('co-name').textContent=cfg.model;
+  document.getElementById('co-engine').textContent=cfg.engine;
+  document.getElementById('po-price').textContent='€'+total.toLocaleString('es-ES');
+
+  // Breakdown
+  document.getElementById('pb-base').textContent='€'+bd.base_price.toLocaleString('es-ES');
+  document.getElementById('pb-model').textContent=md.price>0?'+€'+md.price.toLocaleString('es-ES'):'—';
+  document.getElementById('pb-engine').textContent=ed.price>0?'+€'+ed.price.toLocaleString('es-ES'):'—';
+  document.getElementById('pb-color').textContent=col.price>0?'+€'+col.price.toLocaleString('es-ES'):'—';
+  document.getElementById('pb-extras').textContent=extrasTotal>0?'+€'+extrasTotal.toLocaleString('es-ES'):'—';
+  document.getElementById('pb-total').textContent='€'+total.toLocaleString('es-ES');
+
+  // Budget left
+  const blEl=document.getElementById('budget-left');
+  blEl.style.color=left<0?'var(--red)':left<50000?'var(--gold)':'var(--snow)';
+  blEl.childNodes[0].textContent='€'+Math.round(left).toLocaleString('es-ES');
+
+  // Scores
+  const {sp,ae,re}=calcScores();
+  document.getElementById('sm-sp').style.width=sp+'%';
+  document.getElementById('sm-ae').style.width=ae+'%';
+  document.getElementById('sm-re').style.width=re+'%';
+  document.getElementById('sm-sp-n').textContent=sp;
+  document.getElementById('sm-ae-n').textContent=ae;
+  document.getElementById('sm-re-n').textContent=re;
 }
 
-// ─── SELECT FUNCTIONS ────────────────────────────────────────
-function selectBrand(brand, card) {
-    config.brand = brand;
-    config.model = null;
-    config.engine = null;
-    document.querySelectorAll('#brand-grid .option-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-    document.getElementById('btn-next-1').disabled = false;
-    updateSummary();
+// ── AI ────────────────────────────────────────────────────────
+function getAI(){
+  const body=document.getElementById('ai-body');
+  body.innerHTML='<div class="ai-dots"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>';
+  fetch('/api/ai-advice',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({brand:cfg.brand,model:cfg.model,engine:cfg.engine,color:COLORS[cfg.colorIdx].name,
+      extras:cfg.extras,budget_left:USER_BUDGET-calcTotal(),total_price:calcTotal()})
+  }).then(r=>r.json()).then(d=>{
+    body.innerHTML=`<div style="text-align:left;font-size:12px;line-height:1.6;">${d.advice}</div>`;
+  }).catch(()=>{
+    body.innerHTML='<span style="font-size:11px;color:var(--ash);">Ollama no disponible. Ejecuta: ollama serve</span>';
+  });
 }
 
-function selectModel(model, card, data) {
-    config.model = model;
-    document.querySelectorAll('#model-grid .option-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-    document.getElementById('btn-next-2').disabled = false;
-    updateSummary();
+// ── SAVE ──────────────────────────────────────────────────────
+function saveBuild(){
+  const name=document.getElementById('build-name').value.trim()||cfg.brand+' '+cfg.model;
+  const btn=document.getElementById('btn-save');
+  btn.disabled=true; btn.textContent='⏳ Guardando…';
+  fetch('/api/save-build',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name,brand:cfg.brand,model:cfg.model,engine:cfg.engine,
+      color:COLORS[cfg.colorIdx].name,color_hex:COLORS[cfg.colorIdx].hex,
+      extras:cfg.extras,total_price:calcTotal()})
+  }).then(r=>r.json()).then(d=>{
+    if(d.success) window.location.href='/garage';
+    else{btn.disabled=false;btn.textContent='💾 Guardar en garaje';}
+  }).catch(()=>{btn.disabled=false;btn.textContent='💾 Guardar en garaje';});
 }
 
-function selectEngine(engine, card, data) {
-    config.engine = engine;
-    document.querySelectorAll('.engine-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-    document.getElementById('btn-next-3').disabled = false;
-    updateSummary();
-}
+// ── INIT ──────────────────────────────────────────────────────
+buildBrandStrip();
+buildModelGrid();
+buildEngineList();
+buildColorRow();
+buildExtrasList();
+buildCar();
+updateUI();
+resizeRenderer();
+setCamera();
+animate();
 
-function selectColor(c, sw) {
-    config.color = c.name;
-    config.colorHex = c.hex;
-    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
-    sw.classList.add('selected');
-    document.getElementById('btn-next-4').disabled = false;
-    document.getElementById('color-info').innerHTML = `
-        <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:40px;height:40px;background:${c.hex};border:1px solid rgba(255,255,255,0.2);"></div>
-            <div>
-                <div style="font-weight:700;letter-spacing:1px;">${c.name}</div>
-                <div style="font-size:0.75rem;color:var(--text-dim);">
-                    ${c.price === 0 ? 'Sin coste adicional' : `+€${c.price.toLocaleString('es-ES')}`} 
-                    · Estética +${c.aesthetic_bonus}
-                </div>
-            </div>
-        </div>`;
-    updateSummary();
-}
-
-function toggleExtra(ex, card) {
-    const idx = config.extras.indexOf(ex.id);
-    if (idx > -1) {
-        config.extras.splice(idx, 1);
-        card.classList.remove('selected');
-    } else {
-        // check budget
-        if (calcTotal() + ex.price > USER_BUDGET) {
-            card.style.borderColor = 'var(--red)';
-            setTimeout(() => card.style.borderColor = '', 600);
-            return;
-        }
-        config.extras.push(ex.id);
-        card.classList.add('selected');
-    }
-    updateSummary();
-}
-
-// ─── STEP NAVIGATION ─────────────────────────────────────────
-function goToStep(n) {
-    if (n === 2 && !config.brand) return;
-    if (n === 3 && !config.model) return;
-    if (n === 4 && !config.engine) return;
-    if (n === 5 && !config.color) return;
-
-    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.step-tab').forEach(t => t.classList.remove('active'));
-
-    document.getElementById(`step-${n}`).classList.add('active');
-    document.getElementById(`tab-${n}`).classList.add('active');
-
-    for (let i = 1; i < n; i++) {
-        document.getElementById(`tab-${i}`).classList.add('done');
-    }
-
-    currentStep = n;
-
-    if (n === 2 && config.brand) renderModels(config.brand);
-    if (n === 3 && config.brand) renderEngines(config.brand);
-    if (n === 4) renderColors();
-    if (n === 5) renderExtras();
-    if (n === 6) renderFinalStep();
-}
-
-// ─── SUMMARY & PRICE ─────────────────────────────────────────
-function calcTotal() {
-    let total = 0;
-    if (!config.brand) return 0;
-    const bd = CAR_DATA[config.brand];
-    total += bd.base_price;
-    if (config.model && bd.models[config.model]) total += bd.models[config.model].price;
-    if (config.engine && bd.engines[config.engine]) total += bd.engines[config.engine].price;
-    if (config.color) {
-        const c = COLORS.find(c => c.name === config.color);
-        if (c) total += c.price;
-    }
-    config.extras.forEach(id => {
-        const ex = EXTRAS.find(e => e.id === id);
-        if (ex) total += ex.price;
-    });
-    return total;
-}
-
-function updateSummary() {
-    document.getElementById('sum-brand').textContent = config.brand || '—';
-    document.getElementById('sum-model').textContent = config.model || '—';
-    document.getElementById('sum-engine').textContent = config.engine || '—';
-    document.getElementById('sum-color').textContent = config.color || '—';
-
-    const extrasNames = config.extras.map(id => EXTRAS.find(e => e.id === id)?.name).filter(Boolean);
-    document.getElementById('sum-extras').textContent = extrasNames.length ? extrasNames.join(', ') : 'Ninguno';
-
-    const total = calcTotal();
-    const remaining = USER_BUDGET - total;
-
-    // Price breakdown
-    if (config.brand) {
-        const bd = CAR_DATA[config.brand];
-        let modelPrice = config.model ? (bd.models[config.model]?.price || 0) : 0;
-        let enginePrice = config.engine ? (bd.engines[config.engine]?.price || 0) : 0;
-        let colorPrice = config.color ? (COLORS.find(c => c.name === config.color)?.price || 0) : 0;
-        let extrasTotal = config.extras.reduce((sum, id) => sum + (EXTRAS.find(e => e.id === id)?.price || 0), 0);
-
-        document.getElementById('pr-base').textContent = `€${bd.base_price.toLocaleString('es-ES')}`;
-        document.getElementById('pr-model').textContent = modelPrice > 0 ? `+€${modelPrice.toLocaleString('es-ES')}` : '—';
-        document.getElementById('pr-engine').textContent = enginePrice > 0 ? `+€${enginePrice.toLocaleString('es-ES')}` : '—';
-        document.getElementById('pr-color').textContent = colorPrice > 0 ? `+€${colorPrice.toLocaleString('es-ES')}` : '—';
-        document.getElementById('pr-extras').textContent = extrasTotal > 0 ? `+€${extrasTotal.toLocaleString('es-ES')}` : '—';
-        document.getElementById('pr-total').textContent = `€${total.toLocaleString('es-ES')}`;
-    }
-
-    const budgetEl = document.getElementById('budget-val');
-    budgetEl.textContent = `€${remaining.toLocaleString('es-ES')}`;
-    budgetEl.style.color = remaining < 0 ? 'var(--red)' : remaining < 50000 ? 'var(--orange)' : 'var(--gold)';
-
-    // Preview scores
-    if (config.brand && config.model && config.engine) {
-        document.getElementById('scores-preview').style.display = 'block';
-        updateScorePreview();
-    }
-}
-
-function updateScorePreview() {
-    let speed = 50, aesthetic = 50, resale = 50;
-    const bd = CAR_DATA[config.brand];
-    if (config.model) { const m = bd.models[config.model]; speed += m.speed_bonus; aesthetic += m.aesthetic_bonus; resale += m.resale_bonus; }
-    if (config.engine) { const e = bd.engines[config.engine]; speed += e.speed_bonus; resale += e.resale_bonus; }
-    if (config.color) { const c = COLORS.find(c => c.name === config.color); if (c) aesthetic += c.aesthetic_bonus; }
-    config.extras.forEach(id => {
-        const ex = EXTRAS.find(e => e.id === id);
-        if (ex) { speed += ex.speed_bonus; aesthetic += ex.aesthetic_bonus; resale += ex.resale_bonus; }
-    });
-    speed = Math.min(speed, 100); aesthetic = Math.min(aesthetic, 100); resale = Math.min(resale, 100);
-    document.getElementById('preview-speed').textContent = speed;
-    document.getElementById('preview-aesthetic').textContent = aesthetic;
-    document.getElementById('preview-resale').textContent = resale;
-    document.getElementById('preview-speed-bar').style.width = speed + '%';
-    document.getElementById('preview-aesthetic-bar').style.width = aesthetic + '%';
-    document.getElementById('preview-resale-bar').style.width = resale + '%';
-}
-
-// ─── FINAL STEP ──────────────────────────────────────────────
-function renderFinalStep() {
-    const total = calcTotal();
-    const extrasNames = config.extras.map(id => EXTRAS.find(e => e.id === id)?.name).filter(Boolean);
-
-    document.getElementById('final-summary').innerHTML = `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;font-size:0.85rem;">
-            <div><span style="color:var(--text-muted);font-size:0.7rem;letter-spacing:2px;display:block;margin-bottom:2px;">MARCA</span>${config.brand}</div>
-            <div><span style="color:var(--text-muted);font-size:0.7rem;letter-spacing:2px;display:block;margin-bottom:2px;">MODELO</span>${config.model}</div>
-            <div style="grid-column:1/-1;"><span style="color:var(--text-muted);font-size:0.7rem;letter-spacing:2px;display:block;margin-bottom:2px;">MOTOR</span>${config.engine}</div>
-            <div><span style="color:var(--text-muted);font-size:0.7rem;letter-spacing:2px;display:block;margin-bottom:2px;">COLOR</span>
-                <div style="display:flex;align-items:center;gap:6px;">
-                    <div style="width:14px;height:14px;background:${config.colorHex};border:1px solid rgba(255,255,255,0.2);"></div>
-                    ${config.color}
-                </div>
-            </div>
-            <div><span style="color:var(--text-muted);font-size:0.7rem;letter-spacing:2px;display:block;margin-bottom:2px;">EXTRAS</span>${extrasNames.length ? extrasNames.join(', ') : 'Ninguno'}</div>
-        </div>
-        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:0.7rem;letter-spacing:2px;color:var(--text-muted);">PRECIO TOTAL</span>
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;color:var(--gold);">€${total.toLocaleString('es-ES')}</span>
-        </div>`;
-
-    updateScorePreview();
-    const s = document.getElementById('preview-speed').textContent;
-    const a = document.getElementById('preview-aesthetic').textContent;
-    const r = document.getElementById('preview-resale').textContent;
-
-    document.getElementById('final-scores-grid').innerHTML = `
-        <div style="background:rgba(232,23,10,0.08);border:1px solid rgba(232,23,10,0.2);padding:1.2rem;text-align:center;">
-            <div style="font-size:0.6rem;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">VELOCIDAD</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--red);">${s}</div>
-        </div>
-        <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);padding:1.2rem;text-align:center;">
-            <div style="font-size:0.6rem;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">ESTÉTICA</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:var(--gold);">${a}</div>
-        </div>
-        <div style="background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.2);padding:1.2rem;text-align:center;">
-            <div style="font-size:0.6rem;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">REVENTA</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;color:#4CAF50;">${r}</div>
-        </div>`;
-
-    // Default name
-    if (!document.getElementById('build-name-input').value) {
-        document.getElementById('build-name-input').value = `MI ${config.brand?.toUpperCase()} ${config.model?.toUpperCase()}`;
-    }
-}
-
-// ─── SAVE ────────────────────────────────────────────────────
-function saveBuild() {
-    const name = document.getElementById('build-name-input').value.trim() || `Mi ${config.brand} ${config.model}`;
-    if (!config.brand || !config.model || !config.engine || !config.color) {
-        alert('Completa todos los pasos antes de guardar');
-        return;
-    }
-
-    const saveBtn = document.getElementById('save-btn');
-    saveBtn.disabled = true;
-    saveBtn.textContent = '⏳ GUARDANDO...';
-
-    fetch('/api/save-build', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            name,
-            brand: config.brand,
-            model: config.model,
-            engine: config.engine,
-            color: config.color,
-            color_hex: config.colorHex,
-            extras: config.extras,
-            total_price: calcTotal()
-        })
-    }).then(r => r.json()).then(data => {
-        if (data.success) {
-            window.location.href = '/garage';
-        }
-    }).catch(() => {
-        saveBtn.disabled = false;
-        saveBtn.textContent = '💾 GUARDAR EN GARAJE';
-    });
-}
-
-// ─── AI ADVICE ───────────────────────────────────────────────
-function getAiAdvice() {
-    const body = document.getElementById('ai-advice-body');
-    body.innerHTML = `<div class="ai-loading"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>`;
-
-    const extrasData = config.extras.map(id => ({ id, name: EXTRAS.find(e => e.id === id)?.name }));
-
-    fetch('/api/ai-advice', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            brand: config.brand,
-            model: config.model,
-            engine: config.engine,
-            color: config.color,
-            extras: config.extras,
-            budget_left: USER_BUDGET - calcTotal(),
-            total_price: calcTotal()
-        })
-    }).then(r => r.json()).then(data => {
-        body.innerHTML = `<div style="text-align:left;line-height:1.6;">${data.advice}</div>`;
-    }).catch(() => {
-        body.innerHTML = `<span style="color:var(--text-muted);">Ollama no disponible. Ejecuta: ollama serve</span>`;
-    });
-}
-
-// ─── INIT ────────────────────────────────────────────────────
-renderBrands();
-updateSummary();
+window.addEventListener('resize', resizeRenderer);
 </script>
 {% endblock %}

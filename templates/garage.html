@@ -1,806 +1,633 @@
 {% extends "base.html" %}
-
-{% block title %}Mi Garaje — SuperCar Builder{% endblock %}
+{% block title %}APEX — Mi Garaje{% endblock %}
 
 {% block extra_css %}
 <style>
-.garage-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: 1.5rem;
+.garage-wrap { padding: 2.5rem; }
+
+/* ── HEADER ── */
+.g-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--wire);
 }
 
-.build-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.2s, transform 0.2s;
+.g-eyebrow {
+  font-size: 10px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 6px;
 }
 
-.build-card:hover {
-    border-color: #3A3A3A;
-    transform: translateY(-2px);
+.g-title {
+  font-family: var(--speed);
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  line-height: 1;
 }
 
-.build-card-color {
-    height: 6px;
-    width: 100%;
-}
+.g-sub { color: var(--ash); font-size: 13px; margin-top: 6px; }
 
-.build-card-body { padding: 1.4rem; }
+.g-actions { display: flex; gap: 10px; align-items: center; }
 
-.build-brand {
-    font-size: 0.65rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 2px;
-}
-
-.build-name {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.5rem;
-    letter-spacing: 2px;
-    line-height: 1.1;
-}
-
-.build-model {
-    color: var(--text-dim);
-    font-size: 0.85rem;
-    margin-top: 2px;
-}
-
-.build-price {
-    font-family: 'Share Tech Mono', monospace;
-    color: var(--gold);
-    font-size: 1.1rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-}
-
-.build-scores {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 1rem;
-}
-
-.score-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.score-label {
-    font-size: 0.65rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    width: 70px;
-    flex-shrink: 0;
-}
-
-.score-track {
-    flex: 1;
-    height: 3px;
-    background: var(--bg4);
-}
-
-.score-num {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.75rem;
-    width: 30px;
-    text-align: right;
-}
-
-.build-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border);
-}
-
-.btn-sm {
-    padding: 6px 14px;
-    font-size: 0.72rem;
-    letter-spacing: 1.5px;
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 700;
-    text-transform: uppercase;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s;
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
-}
-
-.btn-race {
-    background: var(--red);
-    color: white;
-    flex: 1;
-}
-.btn-race:hover { background: #FF2010; }
-
-.btn-delete {
-    background: var(--bg4);
-    color: var(--text-dim);
-    border: 1px solid var(--border);
-    clip-path: none;
-}
-.btn-delete:hover { color: var(--red); border-color: var(--red); }
-
-/* Empty state */
-.empty-state {
-    text-align: center;
-    padding: 5rem 2rem;
-    grid-column: 1/-1;
-}
-
-.empty-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    opacity: 0.2;
-}
-
-.empty-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2rem;
-    letter-spacing: 3px;
-    color: var(--text-dim);
-    margin-bottom: 0.5rem;
-}
-
-.empty-sub {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    letter-spacing: 1px;
-    margin-bottom: 2rem;
-}
-
-/* Stats header */
-.stats-bar {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: var(--border);
-    margin-bottom: 2rem;
-    border: 1px solid var(--border);
+/* ── STATS BAR ── */
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--wire);
+  margin-bottom: 2.5rem;
+  background: var(--black2);
 }
 
 .stat-cell {
-    background: var(--surface);
-    padding: 1.2rem 1.5rem;
+  padding: 1.2rem 1.5rem;
+  border-right: 1px solid var(--wire);
+  position: relative;
+  overflow: hidden;
 }
+
+.stat-cell:last-child { border-right: none; }
+
+.stat-cell::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 2px;
+  width: 100%;
+  background: transparent;
+  transition: background 0.3s;
+}
+
+.stat-cell:hover::before { background: var(--red); }
 
 .stat-label {
-    font-size: 0.65rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 4px;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ash);
+  margin-bottom: 6px;
 }
 
-.stat-value {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.8rem;
-    letter-spacing: 2px;
-    line-height: 1;
+.stat-val {
+  font-family: var(--speed);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  line-height: 1;
 }
 
-/* Race modal */
-.modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
+/* ── BUILDS GRID ── */
+.builds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1px;
+  background: var(--wire);
+  border: 1px solid var(--wire);
 }
 
-.modal-overlay.active { display: flex; }
-
-.modal {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    width: 600px;
-    max-width: 95vw;
-    max-height: 90vh;
-    overflow-y: auto;
-    position: relative;
+/* ── BUILD CARD ── */
+.build-card {
+  background: var(--black2);
+  position: relative;
+  overflow: hidden;
+  transition: background 0.2s;
+  cursor: default;
 }
 
-.modal-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.build-card:hover { background: var(--black3); }
+
+.bc-colorbar { height: 3px; width: 100%; }
+
+.bc-body { padding: 1.4rem; }
+
+.bc-brand {
+  font-size: 10px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--ash);
+  margin-bottom: 3px;
 }
 
-.modal-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.5rem;
-    letter-spacing: 3px;
+.bc-name {
+  font-family: var(--speed);
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  line-height: 1.1;
 }
 
-.modal-close {
-    background: none;
-    border: none;
-    color: var(--text-dim);
-    font-size: 1.5rem;
-    cursor: pointer;
-    line-height: 1;
+.bc-engine {
+  font-size: 12px;
+  color: var(--ash);
+  margin-top: 3px;
+  font-style: italic;
 }
 
-.modal-close:hover { color: var(--red); }
-.modal-body { padding: 1.5rem; }
-
-/* Challenges */
-.challenges-section {
-    margin-bottom: 2rem;
+.bc-price {
+  font-family: var(--mono);
+  font-size: 1rem;
+  color: var(--gold);
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--wire);
 }
 
-.challenge-card {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    padding: 1.2rem;
-    margin-bottom: 0.8rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    position: relative;
-    overflow: hidden;
+.bc-scores { margin-top: 1rem; display: flex; flex-direction: column; gap: 7px; }
+
+.score-row { display: flex; align-items: center; gap: 8px; }
+.score-lbl { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ash); width: 64px; }
+.score-track { flex: 1; height: 2px; background: var(--black4, #1e1e1e); }
+.score-num { font-family: var(--mono); font-size: 11px; width: 26px; text-align: right; }
+
+.bc-footer {
+  display: flex;
+  gap: 6px;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--wire);
 }
 
-.challenge-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 3px; height: 100%;
-    background: var(--gold);
+.bc-btn {
+  flex: 1;
+  padding: 8px 10px;
+  font-family: var(--speed);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.challenge-card.completed::before { background: #4CAF50; }
-.challenge-card.completed { opacity: 0.5; }
+.bc-btn-race { background: var(--red); color: #fff; }
+.bc-btn-race:hover { background: #ff2010; }
+.bc-btn-del {
+  background: transparent;
+  color: var(--ash);
+  border: 1px solid var(--wire);
+  flex: 0 0 36px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.bc-btn-del:hover { border-color: var(--red); color: var(--red); }
 
-.challenge-info {}
-.challenge-name {
-    font-weight: 700;
-    font-size: 1rem;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
+/* ── EMPTY STATE ── */
+.empty {
+  background: var(--black2);
+  padding: 6rem 2rem;
+  text-align: center;
+  grid-column: 1 / -1;
 }
 
-.challenge-desc {
-    font-size: 0.78rem;
-    color: var(--text-dim);
-    letter-spacing: 1px;
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.15;
 }
 
-.challenge-reward {
-    font-family: 'Share Tech Mono', monospace;
-    color: var(--gold);
-    font-size: 1rem;
-    white-space: nowrap;
-    text-align: right;
+.empty-title {
+  font-family: var(--speed);
+  font-size: 2rem;
+  letter-spacing: 4px;
+  color: var(--ash);
+  margin-bottom: 0.5rem;
 }
 
-.challenge-reward small {
-    display: block;
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    letter-spacing: 1px;
+.empty-sub { color: var(--ash); font-size: 13px; margin-bottom: 2rem; }
+
+/* ── CHALLENGES MODAL ── */
+.ch-card {
+  background: var(--black3);
+  border: 1px solid var(--wire);
+  padding: 1.2rem;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  transition: border-color 0.2s;
 }
 
-/* Race section */
+.ch-card:hover { border-color: var(--wire2, #333); }
+.ch-card.done { opacity: 0.4; }
+
+.ch-name {
+  font-family: var(--speed);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+.ch-desc { font-size: 12px; color: var(--ash); }
+
+.ch-reward {
+  font-family: var(--mono);
+  color: var(--gold);
+  font-size: 1rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ch-reward small {
+  display: block;
+  font-size: 10px;
+  color: var(--ash);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.ch-claim {
+  padding: 6px 14px;
+  background: var(--gold);
+  border: none;
+  color: #000;
+  font-family: var(--speed);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 6px;
+  display: block;
+  width: 100%;
+}
+
+.ch-claim:hover { background: #f0c060; }
+
+/* ── RACE MODAL ── */
 .race-vs {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 1rem;
-    align-items: center;
-    margin-bottom: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
 }
 
-.race-car-card {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    padding: 1rem;
-    text-align: center;
+.race-car {
+  background: var(--black3);
+  border: 1px solid var(--wire);
+  padding: 1rem;
+  text-align: center;
 }
 
 .race-car-name {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.1rem;
-    letter-spacing: 2px;
-    margin-bottom: 4px;
+  font-family: var(--speed);
+  font-size: 1rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
 }
 
 .race-car-speed {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 1.5rem;
-    color: var(--red);
+  font-family: var(--mono);
+  font-size: 2rem;
+  color: var(--red);
+  line-height: 1;
 }
 
-.race-vs-label {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.8rem;
-    color: var(--text-muted);
-    text-align: center;
+.race-car-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ash);
+  margin-bottom: 4px;
 }
 
-.bet-section {
-    margin-bottom: 1rem;
+.race-vs-txt {
+  font-family: var(--speed);
+  font-size: 2rem;
+  color: var(--ash);
+  text-align: center;
 }
 
-.bet-options {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 8px;
+.bet-opts {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  margin-bottom: 1.2rem;
 }
 
 .bet-btn {
-    padding: 8px 16px;
-    background: var(--bg4);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.2s;
+  padding: 8px 14px;
+  background: var(--black3);
+  border: 1px solid var(--wire);
+  color: var(--ash);
+  font-family: var(--mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.bet-btn:hover, .bet-btn.selected {
-    background: var(--bg3);
-    border-color: var(--gold);
-    color: var(--gold);
+.bet-btn:hover, .bet-btn.sel {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(201,168,76,0.05);
 }
 
 .race-result {
-    display: none;
-    text-align: center;
-    padding: 1.5rem;
-    margin-top: 1rem;
+  display: none;
+  text-align: center;
+  padding: 1.5rem;
+  margin-top: 1rem;
 }
 
 .race-result.win {
-    background: rgba(76,175,80,0.1);
-    border: 1px solid rgba(76,175,80,0.3);
+  background: rgba(61,220,132,0.07);
+  border: 1px solid rgba(61,220,132,0.2);
 }
 
 .race-result.lose {
-    background: rgba(232,23,10,0.1);
-    border: 1px solid rgba(232,23,10,0.3);
+  background: rgba(232,23,10,0.07);
+  border: 1px solid rgba(232,23,10,0.2);
 }
 
 .result-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.5rem;
-    letter-spacing: 4px;
-    margin-bottom: 0.5rem;
+  font-family: var(--speed);
+  font-size: 3rem;
+  letter-spacing: 4px;
+  font-weight: 700;
 }
 
-.result-title.win { color: #4CAF50; }
+.result-title.win { color: var(--green); }
 .result-title.lose { color: var(--red); }
-
-.budget-bar {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
-    background: var(--bg3);
-    border-bottom: 1px solid var(--border);
-}
-
-.budget-bar-label {
-    font-size: 0.7rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-}
-
-.budget-bar-amount {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 1.2rem;
-    color: var(--gold);
-}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-wrapper">
-    <div class="page-header">
-        <div>
-            <div class="page-title heading">MI GARAJE</div>
-            <div class="page-subtitle">{{ builds|length }} build{% if builds|length != 1 %}s{% endif %} guardado{% if builds|length != 1 %}s{% endif %}</div>
-        </div>
-        <div style="display:flex;gap:1rem;align-items:center;">
-            <button onclick="openChallenges()" class="btn btn-gold">🏆 DESAFÍOS</button>
-            <a href="{{ url_for('builder') }}" class="btn btn-primary">+ NUEVO BUILD</a>
-        </div>
+<div class="garage-wrap">
+
+  <div class="g-header">
+    <div>
+      <div class="g-eyebrow">{{ session.username }} · Sistema APEX</div>
+      <div class="g-title">Mi Garaje</div>
+      <div class="g-sub">{{ builds|length }} vehículo{% if builds|length != 1 %}s{% endif %} configurado{% if builds|length != 1 %}s{% endif %}</div>
     </div>
-
-    <!-- Stats bar -->
-    <div class="stats-bar">
-        <div class="stat-cell">
-            <div class="stat-label">Presupuesto</div>
-            <div class="stat-value text-gold mono" id="budget-display">€{{ "{:,.0f}".format(user.budget) }}</div>
-        </div>
-        <div class="stat-cell">
-            <div class="stat-label">Builds</div>
-            <div class="stat-value">{{ builds|length }}</div>
-        </div>
-        <div class="stat-cell">
-            <div class="stat-label">Mejor Velocidad</div>
-            <div class="stat-value text-red">
-                {% if builds %}{{ builds|map(attribute='score_speed')|max }}{% else %}—{% endif %}
-            </div>
-        </div>
-        <div class="stat-cell">
-            <div class="stat-label">Valor Total</div>
-            <div class="stat-value mono" style="font-size:1.2rem;">
-                {% if builds %}€{{ "{:,.0f}".format(builds|map(attribute='total_price')|sum) }}{% else %}—{% endif %}
-            </div>
-        </div>
+    <div class="g-actions">
+      <button onclick="openChallenges()" class="btn btn-gold">🏆 Desafíos</button>
+      <a href="{{ url_for('builder') }}" class="btn btn-red">+ Nuevo build</a>
     </div>
+  </div>
 
-    <!-- Builds grid -->
-    <div class="garage-grid" id="builds-grid">
-        {% if not builds %}
-        <div class="empty-state">
-            <div class="empty-icon">🏎</div>
-            <div class="empty-title">GARAJE VACÍO</div>
-            <div class="empty-sub">Configura tu primer supercar para empezar</div>
-            <a href="{{ url_for('builder') }}" class="btn btn-primary">CONFIGURAR MI PRIMER COCHE</a>
-        </div>
-        {% endif %}
-
-        {% for build in builds %}
-        <div class="build-card" data-id="{{ build.id }}" data-speed="{{ build.score_speed }}"
-             data-name="{{ build.name }}" data-brand="{{ build.brand }}" data-model="{{ build.model }}">
-            <div class="build-card-color" style="background: {{ build.color_hex }};"></div>
-            <div class="build-card-body">
-                <div class="build-brand">{{ build.brand }}</div>
-                <div class="build-name">{{ build.name }}</div>
-                <div class="build-model">{{ build.model }} · {{ build.engine[:30] }}{% if build.engine|length > 30 %}...{% endif %}</div>
-
-                <div class="build-price">€{{ "{:,.0f}".format(build.total_price) }}</div>
-
-                <div class="build-scores">
-                    <div class="score-row">
-                        <span class="score-label">Velocidad</span>
-                        <div class="score-track"><div class="score-fill speed" style="width:{{ build.score_speed }}%"></div></div>
-                        <span class="score-num text-red mono">{{ build.score_speed }}</span>
-                    </div>
-                    <div class="score-row">
-                        <span class="score-label">Estética</span>
-                        <div class="score-track"><div class="score-fill aesthetic" style="width:{{ build.score_aesthetic }}%"></div></div>
-                        <span class="score-num text-gold mono">{{ build.score_aesthetic }}</span>
-                    </div>
-                    <div class="score-row">
-                        <span class="score-label">Reventa</span>
-                        <div class="score-track"><div class="score-fill resale" style="width:{{ build.score_resale }}%"></div></div>
-                        <span class="score-num mono" style="color:#4CAF50">{{ build.score_resale }}</span>
-                    </div>
-                </div>
-
-                <div class="build-actions">
-                    <button class="btn-sm btn-race" onclick="openRace({{ build.id }}, '{{ build.name }}', {{ build.score_speed }})">
-                        ▶ CARRERA
-                    </button>
-                    <button class="btn-sm btn-delete" onclick="deleteBuild({{ build.id }}, this)">✕</button>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
+  <div class="stats-strip">
+    <div class="stat-cell">
+      <div class="stat-label">Presupuesto</div>
+      <div class="stat-val mono" style="color:var(--gold);font-size:1.4rem;" id="budget-disp">€{{ "{:,.0f}".format(user.budget) }}</div>
     </div>
+    <div class="stat-cell">
+      <div class="stat-label">Builds</div>
+      <div class="stat-val">{{ builds|length }}</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-label">Mejor velocidad</div>
+      <div class="stat-val" style="color:var(--red);">{% if builds %}{{ builds|map(attribute='score_speed')|max }}{% else %}—{% endif %}</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-label">Valor total</div>
+      <div class="stat-val mono" style="font-size:1.3rem;">{% if builds %}€{{ "{:,.0f}".format(builds|map(attribute='total_price')|sum) }}{% else %}—{% endif %}</div>
+    </div>
+  </div>
+
+  <div class="builds-grid">
+    {% if not builds %}
+    <div class="empty">
+      <div class="empty-icon">🏎</div>
+      <div class="empty-title">Garaje vacío</div>
+      <div class="empty-sub">Aún no has guardado ningún build</div>
+      <a href="{{ url_for('builder') }}" class="btn btn-red">Configurar mi primer coche</a>
+    </div>
+    {% endif %}
+
+    {% for b in builds %}
+    <div class="build-card" data-id="{{ b.id }}" data-speed="{{ b.score_speed }}" data-name="{{ b.name }}">
+      <div class="bc-colorbar" style="background:{{ b.color_hex }};"></div>
+      <div class="bc-body">
+        <div class="bc-brand">{{ b.brand }}</div>
+        <div class="bc-name">{{ b.name }}</div>
+        <div class="bc-engine">{{ b.engine[:40] }}{% if b.engine|length > 40 %}…{% endif %}</div>
+        <div class="bc-price">€{{ "{:,.0f}".format(b.total_price) }}</div>
+        <div class="bc-scores">
+          <div class="score-row">
+            <span class="score-lbl">Velocidad</span>
+            <div class="score-track"><div class="sbar-fill sp" style="width:{{ b.score_speed }}%"></div></div>
+            <span class="score-num" style="color:var(--red)">{{ b.score_speed }}</span>
+          </div>
+          <div class="score-row">
+            <span class="score-lbl">Estética</span>
+            <div class="score-track"><div class="sbar-fill ae" style="width:{{ b.score_aesthetic }}%"></div></div>
+            <span class="score-num" style="color:var(--gold)">{{ b.score_aesthetic }}</span>
+          </div>
+          <div class="score-row">
+            <span class="score-lbl">Reventa</span>
+            <div class="score-track"><div class="sbar-fill re" style="width:{{ b.score_resale }}%"></div></div>
+            <span class="score-num" style="color:var(--green)">{{ b.score_resale }}</span>
+          </div>
+        </div>
+        <div class="bc-footer">
+          <button class="bc-btn bc-btn-race" onclick="openRace({{ b.id }},'{{ b.name }}',{{ b.score_speed }})">▶ Carrera</button>
+          <button class="bc-btn bc-btn-del" onclick="delBuild({{ b.id }},this)" title="Eliminar">✕</button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
 </div>
 
-<!-- MODAL: Desafíos diarios -->
-<div class="modal-overlay" id="challenges-modal">
-    <div class="modal">
-        <div class="modal-header">
-            <span class="modal-title">🏆 DESAFÍOS DIARIOS</span>
-            <button class="modal-close" onclick="closeChallenges()">×</button>
-        </div>
-        <div class="budget-bar">
-            <span class="budget-bar-label">Tu presupuesto:</span>
-            <span class="budget-bar-amount" id="modal-budget">€{{ "{:,.0f}".format(user.budget) }}</span>
-        </div>
-        <div class="modal-body">
-            <p style="color:var(--text-dim);font-size:0.8rem;letter-spacing:1px;margin-bottom:1.5rem;">
-                Completa desafíos con tus builds guardados para ganar dinero. Se renuevan cada 24h.
-            </p>
-            <div id="challenges-list"></div>
-        </div>
+<!-- MODAL: Desafíos -->
+<div class="modal-bg" id="ch-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">🏆 Desafíos diarios</span>
+      <button class="modal-close" onclick="closeMod('ch-modal')">×</button>
     </div>
+    <div style="padding:0.8rem 1.5rem;border-bottom:1px solid var(--wire);font-family:var(--mono);color:var(--gold);font-size:0.9rem;" id="ch-budget-row">
+      Presupuesto: €{{ "{:,.0f}".format(user.budget) }}
+    </div>
+    <div class="modal-body" id="ch-list"></div>
+  </div>
 </div>
 
 <!-- MODAL: Carrera -->
-<div class="modal-overlay" id="race-modal">
-    <div class="modal">
-        <div class="modal-header">
-            <span class="modal-title">🏁 CARRERA VIRTUAL</span>
-            <button class="modal-close" onclick="closeRace()">×</button>
-        </div>
-        <div class="budget-bar">
-            <span class="budget-bar-label">Tu presupuesto:</span>
-            <span class="budget-bar-amount" id="race-modal-budget">€{{ "{:,.0f}".format(user.budget) }}</span>
-        </div>
-        <div class="modal-body">
-            <div class="race-vs">
-                <div class="race-car-card">
-                    <div class="race-car-name" id="my-car-name">—</div>
-                    <div style="font-size:0.65rem;letter-spacing:2px;color:var(--text-muted);margin-bottom:6px;">TU COCHE</div>
-                    <div class="race-car-speed" id="my-car-speed">—</div>
-                    <div style="font-size:0.65rem;letter-spacing:1px;color:var(--text-muted);">velocidad</div>
-                </div>
-                <div class="race-vs-label">VS</div>
-                <div class="race-car-card">
-                    <div class="race-car-name" id="rival-name">—</div>
-                    <div style="font-size:0.65rem;letter-spacing:2px;color:var(--text-muted);margin-bottom:6px;">RIVAL</div>
-                    <div class="race-car-speed" id="rival-speed">—</div>
-                    <div style="font-size:0.65rem;letter-spacing:1px;color:var(--text-muted);">velocidad</div>
-                </div>
-            </div>
-
-            <div class="bet-section">
-                <label>APUESTA</label>
-                <div class="bet-options">
-                    <button class="bet-btn" onclick="selectBet(5000, this)">€5,000</button>
-                    <button class="bet-btn" onclick="selectBet(15000, this)">€15,000</button>
-                    <button class="bet-btn" onclick="selectBet(30000, this)">€30,000</button>
-                    <button class="bet-btn" onclick="selectBet(50000, this)">€50,000</button>
-                    <button class="bet-btn" onclick="selectBet(100000, this)">€100,000</button>
-                </div>
-            </div>
-
-            <button class="btn btn-primary" style="width:100%;" onclick="runRace()" id="race-btn">
-                ▶ INICIAR CARRERA
-            </button>
-
-            <div class="race-result" id="race-result">
-                <div class="result-title" id="result-title">—</div>
-                <div id="result-desc" style="color:var(--text-dim);font-size:0.9rem;letter-spacing:1px;"></div>
-                <div id="result-money" style="font-family:'Share Tech Mono',monospace;font-size:1.3rem;margin-top:0.8rem;"></div>
-            </div>
-        </div>
+<div class="modal-bg" id="race-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">🏁 Carrera Virtual</span>
+      <button class="modal-close" onclick="closeMod('race-modal')">×</button>
     </div>
-</div>
+    <div style="padding:0.8rem 1.5rem;border-bottom:1px solid var(--wire);font-family:var(--mono);color:var(--gold);font-size:0.9rem;" id="race-budget-row">
+      Presupuesto: €{{ "{:,.0f}".format(user.budget) }}
+    </div>
+    <div class="modal-body">
+      <div class="race-vs">
+        <div class="race-car">
+          <div class="race-car-label">Tu coche</div>
+          <div class="race-car-name" id="my-name">—</div>
+          <div class="race-car-speed" id="my-spd">—</div>
+          <div style="font-size:10px;color:var(--ash);letter-spacing:1px;margin-top:2px;">puntos velocidad</div>
+        </div>
+        <div class="race-vs-txt">VS</div>
+        <div class="race-car">
+          <div class="race-car-label">Rival</div>
+          <div class="race-car-name" id="rival-name">—</div>
+          <div class="race-car-speed" id="rival-spd">—</div>
+          <div style="font-size:10px;color:var(--ash);letter-spacing:1px;margin-top:2px;">puntos velocidad</div>
+        </div>
+      </div>
 
+      <label>Apuesta</label>
+      <div class="bet-opts">
+        <button class="bet-btn" onclick="selBet(5000,this)">€5K</button>
+        <button class="bet-btn" onclick="selBet(15000,this)">€15K</button>
+        <button class="bet-btn" onclick="selBet(30000,this)">€30K</button>
+        <button class="bet-btn" onclick="selBet(50000,this)">€50K</button>
+        <button class="bet-btn" onclick="selBet(100000,this)">€100K</button>
+      </div>
+
+      <button class="btn btn-red" style="width:100%;" id="race-go" onclick="runRace()">▶ Iniciar carrera</button>
+
+      <div class="race-result" id="race-result">
+        <div class="result-title" id="result-title">—</div>
+        <div style="font-size:13px;color:var(--ash);margin-top:6px;" id="result-desc"></div>
+        <div style="font-family:var(--mono);font-size:1.3rem;margin-top:10px;" id="result-money"></div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-let currentBudget = {{ user.budget }};
-let selectedBet = 0;
-let currentRaceBuildId = null;
-let currentRaceSpeed = 0;
-let raceUsed = false;
+let budget = {{ user.budget }};
+let bet = 0, raceUsed = false, rival = null, mySpd = 0;
+const builds = {{ builds|tojson }};
 
-const builds = {{ builds | tojson }};
-
-// ─── CHALLENGES ─────────────────────────────────────────────
-const CHALLENGES = [
-    {
-        id: 'challenge_budget',
-        name: 'Eficiencia máxima',
-        desc: 'Construye un coche por menos de €200,000 con velocidad ≥ 70',
-        reward: 80000,
-        check: (builds) => builds.some(b => b.total_price <= 200000 && b.score_speed >= 70)
-    },
-    {
-        id: 'challenge_speed',
-        name: 'Maestro del asfalto',
-        desc: 'Consigue una puntuación de velocidad ≥ 90 en cualquier build',
-        reward: 120000,
-        check: (builds) => builds.some(b => b.score_speed >= 90)
-    },
-    {
-        id: 'challenge_aesthetic',
-        name: 'Joya del paddock',
-        desc: 'Construye un coche con estética ≥ 88 y velocidad ≥ 75',
-        reward: 95000,
-        check: (builds) => builds.some(b => b.score_aesthetic >= 88 && b.score_speed >= 75)
-    },
-    {
-        id: 'challenge_ferrari',
-        name: 'Cuore sportivo',
-        desc: 'Crea un Ferrari con todos los extras de aerodinámica y carbono',
-        reward: 60000,
-        check: (builds) => builds.some(b => b.brand === 'Ferrari' && b.extras && b.extras.includes('carbon_pack') && b.extras.includes('aero_kit'))
-    },
-    {
-        id: 'challenge_collection',
-        name: 'Coleccionista',
-        desc: 'Ten 3 o más builds guardados en tu garaje',
-        reward: 50000,
-        check: (builds) => builds.length >= 3
-    }
-];
-
-function getCompletedChallenges() {
-    return JSON.parse(localStorage.getItem('completed_challenges') || '[]');
-}
-
-function renderChallenges() {
-    const completed = getCompletedChallenges();
-    const list = document.getElementById('challenges-list');
-    list.innerHTML = '';
-
-    CHALLENGES.forEach(ch => {
-        const isDone = completed.includes(ch.id);
-        const canClaim = !isDone && ch.check(builds);
-
-        list.innerHTML += `
-        <div class="challenge-card ${isDone ? 'completed' : ''}">
-            <div class="challenge-info">
-                <div class="challenge-name">${ch.name} ${isDone ? '✓' : ''}</div>
-                <div class="challenge-desc">${ch.desc}</div>
-            </div>
-            <div style="text-align:right;flex-shrink:0;">
-                <div class="challenge-reward">
-                    €${ch.reward.toLocaleString('es-ES')}
-                    <small>RECOMPENSA</small>
-                </div>
-                ${canClaim ? `<button class="btn-sm btn-race" style="margin-top:6px;" onclick="claimChallenge('${ch.id}', ${ch.reward})">COBRAR</button>` : ''}
-            </div>
-        </div>`;
-    });
-}
-
-function claimChallenge(id, reward) {
-    const completed = getCompletedChallenges();
-    completed.push(id);
-    localStorage.setItem('completed_challenges', JSON.stringify(completed));
-
-    fetch('/api/update-budget', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({amount: reward})
-    }).then(r => r.json()).then(data => {
-        if (data.success) {
-            currentBudget = data.new_budget;
-            updateBudgetDisplays();
-            renderChallenges();
-        }
-    });
-}
-
-function openChallenges() {
-    renderChallenges();
-    document.getElementById('challenges-modal').classList.add('active');
-}
-function closeChallenges() {
-    document.getElementById('challenges-modal').classList.remove('active');
-}
-
-// ─── RACE ────────────────────────────────────────────────────
 const RIVALS = [
-    { name: 'Ghost_Driver', speed: 72 },
-    { name: 'Scuderia_AI', speed: 78 },
-    { name: 'VeloceBOT', speed: 84 },
-    { name: 'RedLine_X', speed: 88 },
-    { name: 'Apex_Hunter', speed: 93 },
-    { name: 'Turbo_Ghost', speed: 68 },
-    { name: 'Nitro_System', speed: 80 },
+  {name:'Ghost_Drift',spd:72},{name:'Scuderia_AI',spd:78},{name:'VeloceBOT',spd:84},
+  {name:'RedLine_X',spd:88},{name:'Apex_Ghost',spd:93},{name:'Turbo_0',spd:68},{name:'Nitro_SYS',spd:80}
 ];
 
-let currentRival = null;
+const CHALLENGES = [
+  {id:'ch1',name:'Eficiencia máxima',desc:'Coche <€200K con velocidad ≥70',reward:80000,check:b=>b.some(x=>x.total_price<=200000&&x.score_speed>=70)},
+  {id:'ch2',name:'Maestro del asfalto',desc:'Velocidad ≥90 en cualquier build',reward:120000,check:b=>b.some(x=>x.score_speed>=90)},
+  {id:'ch3',name:'Joya del paddock',desc:'Estética ≥88 y velocidad ≥75',reward:95000,check:b=>b.some(x=>x.score_aesthetic>=88&&x.score_speed>=75)},
+  {id:'ch4',name:'Cuore sportivo',desc:'Ferrari con carbon_pack y aero_kit',reward:60000,check:b=>b.some(x=>x.brand==='Ferrari'&&x.extras&&x.extras.includes('carbon_pack')&&x.extras.includes('aero_kit'))},
+  {id:'ch5',name:'Coleccionista',desc:'3 o más builds en el garaje',reward:50000,check:b=>b.length>=3}
+];
 
-function openRace(buildId, buildName, speed) {
-    currentRaceBuildId = buildId;
-    currentRaceSpeed = speed;
-    raceUsed = false;
-    selectedBet = 0;
-    document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('selected'));
-    document.getElementById('race-result').style.display = 'none';
-    document.getElementById('race-btn').disabled = false;
-    document.getElementById('race-btn').textContent = '▶ INICIAR CARRERA';
-
-    currentRival = RIVALS[Math.floor(Math.random() * RIVALS.length)];
-
-    document.getElementById('my-car-name').textContent = buildName;
-    document.getElementById('my-car-speed').textContent = speed;
-    document.getElementById('rival-name').textContent = currentRival.name;
-    document.getElementById('rival-speed').textContent = currentRival.speed;
-
-    document.getElementById('race-modal').classList.add('active');
+function fmtEur(n){return '€'+Math.round(n).toLocaleString('es-ES');}
+function updBudgets(){
+  const f=fmtEur(budget);
+  document.getElementById('budget-disp').textContent=f;
+  document.getElementById('ch-budget-row').textContent='Presupuesto: '+f;
+  document.getElementById('race-budget-row').textContent='Presupuesto: '+f;
+  const gb=document.getElementById('global-budget');
+  if(gb) gb.textContent=f;
 }
 
-function closeRace() {
-    document.getElementById('race-modal').classList.remove('active');
+function openChallenges(){
+  renderChallenges();
+  document.getElementById('ch-modal').classList.add('open');
 }
 
-function selectBet(amount, btn) {
-    if (raceUsed) return;
-    selectedBet = amount;
-    document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
+function renderChallenges(){
+  const done=JSON.parse(localStorage.getItem('apex_done')||'[]');
+  let html='';
+  CHALLENGES.forEach(ch=>{
+    const isDone=done.includes(ch.id);
+    const canClaim=!isDone&&ch.check(builds);
+    html+=`<div class="ch-card ${isDone?'done':''}">
+      <div>
+        <div class="ch-name">${ch.name}${isDone?' ✓':''}</div>
+        <div class="ch-desc">${ch.desc}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div class="ch-reward">${fmtEur(ch.reward)}<small>Recompensa</small></div>
+        ${canClaim?`<button class="ch-claim" onclick="claim('${ch.id}',${ch.reward})">Cobrar →</button>`:''}
+      </div>
+    </div>`;
+  });
+  document.getElementById('ch-list').innerHTML=html;
 }
 
-function runRace() {
-    if (raceUsed) return;
-    if (selectedBet === 0) {
-        alert('Selecciona una apuesta primero');
-        return;
-    }
-    if (selectedBet > currentBudget) {
-        alert('No tienes suficiente presupuesto para esta apuesta');
-        return;
-    }
-
-    raceUsed = true;
-    document.getElementById('race-btn').disabled = true;
-    document.getElementById('race-btn').textContent = '⏳ CORRIENDO...';
-
-    setTimeout(() => {
-        // Speed + small random factor
-        const myFinal = currentRaceSpeed + (Math.random() * 10 - 5);
-        const rivalFinal = currentRival.speed + (Math.random() * 10 - 5);
-        const won = myFinal > rivalFinal;
-
-        const amountChange = won ? selectedBet : -selectedBet;
-
-        fetch('/api/update-budget', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({amount: amountChange})
-        }).then(r => r.json()).then(data => {
-            currentBudget = data.new_budget;
-            updateBudgetDisplays();
-
-            const resultEl = document.getElementById('race-result');
-            const titleEl = document.getElementById('result-title');
-            const descEl = document.getElementById('result-desc');
-            const moneyEl = document.getElementById('result-money');
-
-            resultEl.className = 'race-result ' + (won ? 'win' : 'lose');
-            resultEl.style.display = 'block';
-
-            titleEl.className = 'result-title ' + (won ? 'win' : 'lose');
-            titleEl.textContent = won ? '🏆 VICTORIA' : '💀 DERROTA';
-
-            descEl.textContent = won
-                ? `Tu score ${myFinal.toFixed(1)} superó al rival ${rivalFinal.toFixed(1)}`
-                : `Tu score ${myFinal.toFixed(1)} fue insuficiente contra ${rivalFinal.toFixed(1)}`;
-
-            moneyEl.textContent = (won ? '+' : '') + amountChange.toLocaleString('es-ES') + ' €';
-            moneyEl.style.color = won ? '#4CAF50' : 'var(--red)';
-
-            document.getElementById('race-btn').textContent = '✓ CARRERA FINALIZADA';
-        });
-    }, 2000);
+function claim(id,reward){
+  const done=JSON.parse(localStorage.getItem('apex_done')||'[]');
+  done.push(id);
+  localStorage.setItem('apex_done',JSON.stringify(done));
+  fetch('/api/update-budget',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:reward})})
+    .then(r=>r.json()).then(d=>{if(d.success){budget=d.new_budget;updBudgets();renderChallenges();}});
 }
 
-// ─── UTILS ───────────────────────────────────────────────────
-function updateBudgetDisplays() {
-    const formatted = '€' + Math.round(currentBudget).toLocaleString('es-ES');
-    document.getElementById('budget-display').textContent = formatted;
-    document.getElementById('modal-budget').textContent = formatted;
-    document.getElementById('race-modal-budget').textContent = formatted;
+function openRace(id,name,spd){
+  raceUsed=false; bet=0; mySpd=spd;
+  document.querySelectorAll('.bet-btn').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('race-result').style.display='none';
+  document.getElementById('race-go').disabled=false;
+  document.getElementById('race-go').textContent='▶ Iniciar carrera';
+  rival=RIVALS[Math.floor(Math.random()*RIVALS.length)];
+  document.getElementById('my-name').textContent=name;
+  document.getElementById('my-spd').textContent=spd;
+  document.getElementById('rival-name').textContent=rival.name;
+  document.getElementById('rival-spd').textContent=rival.spd;
+  document.getElementById('race-modal').classList.add('open');
 }
 
-function deleteBuild(id, btn) {
-    if (!confirm('¿Eliminar este build?')) return;
-    fetch(`/api/delete-build/${id}`, { method: 'DELETE' })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                btn.closest('.build-card').remove();
-            }
-        });
+function selBet(a,btn){
+  if(raceUsed)return;
+  bet=a;
+  document.querySelectorAll('.bet-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
 }
 
-// Cerrar modal al click fuera
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', function(e) {
-        if (e.target === this) this.classList.remove('active');
-    });
+function runRace(){
+  if(raceUsed)return;
+  if(!bet){alert('Selecciona una apuesta');return;}
+  if(bet>budget){alert('Presupuesto insuficiente');return;}
+  raceUsed=true;
+  const btn=document.getElementById('race-go');
+  btn.disabled=true;btn.textContent='⏳ Corriendo…';
+  setTimeout(()=>{
+    const myF=mySpd+(Math.random()*10-5);
+    const rvF=rival.spd+(Math.random()*10-5);
+    const won=myF>rvF;
+    const delta=won?bet:-bet;
+    fetch('/api/update-budget',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:delta})})
+      .then(r=>r.json()).then(d=>{
+        budget=d.new_budget; updBudgets();
+        const res=document.getElementById('race-result');
+        res.className='race-result '+(won?'win':'lose');
+        res.style.display='block';
+        document.getElementById('result-title').className='result-title '+(won?'win':'lose');
+        document.getElementById('result-title').textContent=won?'VICTORIA':'DERROTA';
+        document.getElementById('result-desc').textContent=`Tu score ${myF.toFixed(1)} ${won?'superó':'perdió contra'} ${rvF.toFixed(1)}`;
+        document.getElementById('result-money').textContent=(won?'+':'')+fmtEur(delta);
+        document.getElementById('result-money').style.color=won?'var(--green)':'var(--red)';
+        btn.textContent='✓ Finalizado';
+      });
+  },2000);
+}
+
+function closeMod(id){document.getElementById(id).classList.remove('open');}
+
+function delBuild(id,btn){
+  if(!confirm('¿Eliminar este build?'))return;
+  fetch('/api/delete-build/'+id,{method:'DELETE'}).then(r=>r.json()).then(d=>{
+    if(d.success) btn.closest('.build-card').remove();
+  });
+}
+
+document.querySelectorAll('.modal-bg').forEach(m=>{
+  m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});
 });
 </script>
 {% endblock %}

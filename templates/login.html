@@ -1,283 +1,304 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — SuperCar Builder</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --red: #E8170A;
-            --gold: #C9A84C;
-            --bg: #080808;
-            --bg2: #111111;
-            --bg3: #1A1A1A;
-            --border: #2A2A2A;
-            --text: #F0F0F0;
-            --text-dim: #888;
-            --text-muted: #555;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Rajdhani', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APEX — Acceder</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600;700&family=Familjen+Grotesk:ital,wght@0,400;0,500;0,700;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black:#060606; --black2:#0e0e0e; --black3:#161616; --wire:#2a2a2a;
+  --ash:#555; --fog:#888; --mist:#aaa; --snow:#f0f0f0; --white:#ffffff;
+  --red:#e8170a; --gold:#c9a84c;
+  --speed:'Oswald',sans-serif; --body:'Familjen Grotesk',sans-serif; --mono:'DM Mono',monospace;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{background:var(--black);color:var(--snow);font-family:var(--body);overflow:hidden;}
 
-        /* Background grid */
-        body::after {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(232,23,10,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(232,23,10,0.03) 1px, transparent 1px);
-            background-size: 60px 60px;
-            pointer-events: none;
-        }
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:9999;opacity:0.4;
+}
 
-        /* Glow orb */
-        body::before {
-            content: '';
-            position: fixed;
-            top: -20%;
-            right: -10%;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(232,23,10,0.08) 0%, transparent 70%);
-            pointer-events: none;
-        }
+.grid-bg {
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(232,23,10,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,23,10,0.04) 1px, transparent 1px);
+  background-size:80px 80px;
+}
 
-        .split {
-            display: flex;
-            width: 100%;
-            max-width: 1000px;
-            min-height: 580px;
-            position: relative;
-            z-index: 1;
-        }
+/* Red blur orb */
+.orb {
+  position:fixed;
+  width:600px;height:600px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(232,23,10,0.12) 0%, transparent 65%);
+  pointer-events:none;
+}
+.orb-1{top:-100px;right:-100px;}
+.orb-2{bottom:-200px;left:-100px;background:radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 65%);}
 
-        /* Left side — branding */
-        .brand-side {
-            flex: 1;
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-right: none;
-            padding: 3rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-        }
+.layout {
+  display:grid;
+  grid-template-columns:1fr 420px;
+  height:100vh;
+  position:relative;
+  z-index:1;
+}
 
-        .brand-side::before {
-            content: '';
-            position: absolute;
-            bottom: -40px; right: -40px;
-            width: 300px; height: 300px;
-            background: radial-gradient(circle, rgba(232,23,10,0.06) 0%, transparent 70%);
-        }
+/* Left: Big editorial */
+.left {
+  padding:3rem;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  border-right:1px solid var(--wire);
+  position:relative;
+  overflow:hidden;
+}
 
-        .brand-logo {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2.4rem;
-            letter-spacing: 4px;
-            line-height: 1;
-        }
+.big-text {
+  font-family:var(--speed);
+  font-size:clamp(5rem, 12vw, 10rem);
+  font-weight:700;
+  text-transform:uppercase;
+  line-height:0.88;
+  letter-spacing:-2px;
+  color:var(--white);
+  mix-blend-mode:normal;
+}
 
-        .brand-logo span { color: var(--red); }
+.big-text span { color:var(--red); display:block; }
 
-        .brand-tagline {
-            font-size: 0.75rem;
-            letter-spacing: 3px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            margin-top: 8px;
-        }
+.tagline {
+  font-size:11px;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  color:var(--ash);
+  margin-top:1.5rem;
+}
 
-        .brand-specs {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
+.specs-row {
+  display:flex;
+  gap:2rem;
+}
 
-        .spec-item {}
-        .spec-label {
-            font-size: 0.65rem;
-            letter-spacing: 3px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-        .spec-value {
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 1.1rem;
-            color: var(--gold);
-        }
+.spec {
+  border-left:2px solid var(--wire);
+  padding-left:1rem;
+}
 
-        .brand-bottom {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            letter-spacing: 1px;
-        }
+.spec-val {
+  font-family:var(--mono);
+  font-size:1.4rem;
+  color:var(--gold);
+  line-height:1;
+}
 
-        /* Right side — form */
-        .form-side {
-            width: 380px;
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            padding: 3rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+.spec-key {
+  font-size:10px;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:var(--ash);
+  margin-top:3px;
+}
 
-        .form-title {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2rem;
-            letter-spacing: 4px;
-            margin-bottom: 0.3rem;
-        }
+.left-bottom {
+  font-size:11px;
+  color:var(--ash);
+  letter-spacing:1px;
+}
 
-        .form-subtitle {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 2rem;
-        }
+/* Diagonal stripe */
+.stripe {
+  position:absolute;
+  top:0;right:60px;
+  width:2px;height:100%;
+  background:linear-gradient(to bottom, transparent, var(--wire) 30%, var(--wire) 70%, transparent);
+  transform:skewX(-8deg);
+}
 
-        .form-group { margin-bottom: 1.2rem; }
+/* Right: Form */
+.right {
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:3rem;
+  background:var(--black2);
+}
 
-        label {
-            display: block;
-            font-size: 0.7rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: var(--text-dim);
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
+.form-header { margin-bottom:2.5rem; }
 
-        input {
-            width: 100%;
-            background: #0D0D0D;
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 11px 14px;
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 1rem;
-            font-weight: 500;
-            outline: none;
-            transition: border-color 0.2s;
-        }
+.form-eyebrow {
+  font-size:10px;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  color:var(--red);
+  margin-bottom:8px;
+}
 
-        input:focus { border-color: var(--red); }
-        input::placeholder { color: var(--text-muted); }
+.form-title {
+  font-family:var(--speed);
+  font-size:2.5rem;
+  font-weight:700;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  line-height:1;
+}
 
-        .btn-submit {
-            width: 100%;
-            padding: 13px;
-            background: var(--red);
-            color: white;
-            border: none;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.1rem;
-            letter-spacing: 3px;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 0.5rem;
-            clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
-        }
+.form-sub {
+  font-size:13px;
+  color:var(--ash);
+  margin-top:8px;
+}
 
-        .btn-submit:hover { background: #FF2010; }
+.form-group { margin-bottom:1.1rem; }
 
-        .form-link {
-            text-align: center;
-            margin-top: 1.5rem;
-            font-size: 0.8rem;
-            color: var(--text-dim);
-            letter-spacing: 1px;
-        }
+label {
+  display:block;
+  font-size:10px;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:var(--fog);
+  font-weight:600;
+  margin-bottom:6px;
+  font-family:var(--body);
+}
 
-        .form-link a {
-            color: var(--red);
-            text-decoration: none;
-            font-weight: 600;
-        }
+input {
+  width:100%;
+  background:var(--black3);
+  border:1px solid var(--wire);
+  color:var(--snow);
+  padding:12px 14px;
+  font-family:var(--body);
+  font-size:15px;
+  outline:none;
+  transition:border-color 0.2s;
+}
 
-        .alert-error {
-            background: rgba(232,23,10,0.1);
-            border: 1px solid rgba(232,23,10,0.3);
-            color: #FF6B6B;
-            padding: 10px 14px;
-            font-size: 0.82rem;
-            letter-spacing: 1px;
-            margin-bottom: 1.2rem;
-        }
+input:focus { border-color:var(--red); }
+input::placeholder { color:var(--ash); }
 
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: var(--red); }
-    </style>
+.btn-submit {
+  width:100%;
+  padding:14px;
+  background:var(--red);
+  color:#fff;
+  border:none;
+  font-family:var(--speed);
+  font-size:1rem;
+  font-weight:600;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:background 0.2s;
+  margin-top:0.5rem;
+  position:relative;
+  overflow:hidden;
+}
+
+.btn-submit::before {
+  content:'';
+  position:absolute;
+  top:0;left:-100%;width:100%;height:100%;
+  background:rgba(255,255,255,0.1);
+  transition:left 0.3s;
+}
+
+.btn-submit:hover { background:#ff2010; }
+.btn-submit:hover::before { left:0; }
+
+.form-footer {
+  text-align:center;
+  margin-top:1.5rem;
+  font-size:13px;
+  color:var(--ash);
+}
+
+.form-footer a { color:var(--red); text-decoration:none; font-weight:600; }
+.form-footer a:hover { color:var(--gold); }
+
+.alert {
+  padding:10px 14px;
+  font-size:13px;
+  border-left:3px solid var(--red);
+  background:rgba(232,23,10,0.08);
+  color:#ff8880;
+  margin-bottom:1.2rem;
+}
+
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--red);}
+</style>
 </head>
 <body>
-    <div class="split">
-        <div class="brand-side">
-            <div>
-                <div class="brand-logo">SUPER<span>CAR</span><br>BUILDER</div>
-                <div class="brand-tagline">Configure your dream machine</div>
-            </div>
-            <div class="brand-specs">
-                <div class="spec-item">
-                    <div class="spec-label">Presupuesto inicial</div>
-                    <div class="spec-value">€500,000</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-label">Marcas disponibles</div>
-                    <div class="spec-value">Ferrari · Lamborghini · Porsche · McLaren · Bugatti</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-label">IA Integrada</div>
-                    <div class="spec-value">Asesor experto en tiempo real</div>
-                </div>
-                <div class="spec-item">
-                    <div class="spec-label">Puntuación</div>
-                    <div class="spec-value">Velocidad · Estética · Reventa</div>
-                </div>
-            </div>
-            <div class="brand-bottom">© 2024 SuperCar Builder — Portfolio Project</div>
-        </div>
-        <div class="form-side">
-            <div class="form-title">ACCEDER</div>
-            <div class="form-subtitle">Entra a tu garaje</div>
+<div class="grid-bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
 
-            {% if error %}
-            <div class="alert-error">{{ error }}</div>
-            {% endif %}
-
-            <form method="POST" action="{{ url_for('login') }}">
-                <div class="form-group">
-                    <label>Usuario</label>
-                    <input type="text" name="username" placeholder="tu_nombre" required autocomplete="off">
-                </div>
-                <div class="form-group">
-                    <label>Contraseña</label>
-                    <input type="password" name="password" placeholder="••••••••" required>
-                </div>
-                <button type="submit" class="btn-submit">ENTRAR AL GARAJE</button>
-            </form>
-
-            <div class="form-link">
-                ¿Sin cuenta? <a href="{{ url_for('register') }}">Regístrate aquí</a>
-            </div>
-        </div>
+<div class="layout">
+  <div class="left">
+    <div class="stripe"></div>
+    <div>
+      <div class="big-text">
+        BUILD
+        <span>YOUR</span>
+        DREAM
+      </div>
+      <div class="tagline">Supercar Configurator — Est. 2024</div>
     </div>
+
+    <div class="specs-row">
+      <div class="spec">
+        <div class="spec-val">5</div>
+        <div class="spec-key">Marcas</div>
+      </div>
+      <div class="spec">
+        <div class="spec-val">18</div>
+        <div class="spec-key">Modelos</div>
+      </div>
+      <div class="spec">
+        <div class="spec-val">€500K</div>
+        <div class="spec-key">Budget inicial</div>
+      </div>
+      <div class="spec">
+        <div class="spec-val">3D</div>
+        <div class="spec-key">Configurador</div>
+      </div>
+    </div>
+
+    <div class="left-bottom">© 2024 APEX — Portfolio Project by Serena</div>
+  </div>
+
+  <div class="right">
+    <div class="form-header">
+      <div class="form-eyebrow">Acceso al sistema</div>
+      <div class="form-title">Entrar</div>
+      <div class="form-sub">Accede a tu garaje personal</div>
+    </div>
+
+    {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <div class="form-group">
+        <label>Usuario</label>
+        <input type="text" name="username" placeholder="tu_nombre" required autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" name="password" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn-submit">Entrar al garaje →</button>
+    </form>
+
+    <div class="form-footer">
+      Sin cuenta · <a href="{{ url_for('register') }}">Regístrate aquí</a>
+    </div>
+  </div>
+</div>
 </body>
 </html>
