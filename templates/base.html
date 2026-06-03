@@ -3,39 +3,54 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{% block title %}APEX — Supercar Configurator{% endblock %}</title>
+<title>{% block title %}APEX 峠 — Tokyo Drift Configurator{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Druk+Wide+Bold&family=Familjen+Grotesk:ital,wght@0,400;0,500;0,700;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600;700&family=Familjen+Grotesk:ital,wght@0,400;0,500;0,700;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600;700&family=Familjen+Grotesk:ital,wght@0,400;0,500;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --black:   #060606;
-  --black2:  #0e0e0e;
-  --black3:  #161616;
-  --black4:  #1e1e1e;
-  --wire:    #2a2a2a;
-  --wire2:   #333;
-  --ash:     #555;
-  --fog:     #888;
-  --mist:    #aaa;
-  --snow:    #f0f0f0;
+  /* ── Tokyo Night palette ── */
+  --bg:      #03030c;
+  --bg2:     #07071a;
+  --bg3:     #0d0d24;
+  --bg4:     #111130;
+  --wire:    rgba(0,229,255,0.12);
+  --wire2:   rgba(0,229,255,0.25);
+  --ash:     rgba(180,210,255,0.35);
+  --fog:     rgba(180,210,255,0.55);
+  --mist:    rgba(200,225,255,0.75);
+  --snow:    #e0eeff;
   --white:   #ffffff;
-  --red:     #e8170a;
-  --red2:    #ff3322;
-  --gold:    #c9a84c;
-  --gold2:   #f0c060;
-  --green:   #3ddc84;
+
+  /* Neon */
+  --cyan:    #00e5ff;
+  --cyan2:   #80f8ff;
+  --pink:    #ff0066;
+  --pink2:   #ff3388;
+  --purple:  #8800ff;
+  --orange:  #ff5500;
+  --green:   #00ff99;
+
+  /* Compat aliases so existing code keeps working */
+  --black:   var(--bg);
+  --black2:  var(--bg2);
+  --black3:  var(--bg3);
+  --black4:  var(--bg4);
+  --red:     var(--pink);
+  --red2:    var(--pink2);
+  --gold:    var(--cyan);
+  --gold2:   var(--cyan2);
+
   --speed: 'Oswald', sans-serif;
-  --body: 'Familjen Grotesk', sans-serif;
-  --mono: 'DM Mono', monospace;
+  --body:  'Familjen Grotesk', sans-serif;
+  --mono:  'DM Mono', monospace;
+  --jp:    'Noto Sans JP', sans-serif;
 }
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
 html { scroll-behavior: smooth; }
 
 body {
-  background: var(--black);
+  background: var(--bg);
   color: var(--snow);
   font-family: var(--body);
   font-size: 15px;
@@ -44,15 +59,43 @@ body {
   overflow-x: hidden;
 }
 
-/* Noise texture overlay */
+/* ── Tokyo grid background ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Neon orbs ── */
 body::after {
   content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 800px 600px at 10% 20%, rgba(0,229,255,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 600px 800px at 90% 80%, rgba(255,0,102,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 500px 500px at 50% 110%, rgba(136,0,255,0.03) 0%, transparent 60%);
   pointer-events: none;
-  z-index: 9999;
-  opacity: 0.4;
+  z-index: 0;
+}
+
+/* ── Scan lines ── */
+.page-root::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,229,255,0.012) 2px,
+    rgba(0,229,255,0.012) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
 }
 
 /* ── NAVIGATION ── */
@@ -65,58 +108,84 @@ nav {
   align-items: center;
   justify-content: space-between;
   padding: 0 2rem;
-  background: rgba(6,6,6,0.92);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--wire);
+  background: rgba(3,3,12,0.94);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(0,229,255,0.2);
+  box-shadow: 0 1px 40px rgba(0,229,255,0.06);
 }
 
 .nav-logo {
   font-family: var(--speed);
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: 700;
-  letter-spacing: 6px;
+  letter-spacing: 5px;
   text-transform: uppercase;
   color: var(--white);
   text-decoration: none;
   display: flex;
   align-items: center;
   gap: 10px;
+  text-shadow: 0 0 20px rgba(0,229,255,0.5);
+}
+
+.nav-logo-jp {
+  font-family: var(--jp);
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: var(--cyan);
+  letter-spacing: 2px;
+  text-shadow: 0 0 12px var(--cyan), 0 0 24px rgba(0,229,255,0.4);
 }
 
 .nav-logo-dot {
-  width: 8px; height: 8px;
-  background: var(--red);
+  width: 7px; height: 7px;
+  background: var(--cyan);
   border-radius: 50%;
-  animation: blink 2s ease-in-out infinite;
+  box-shadow: 0 0 8px var(--cyan), 0 0 16px var(--cyan);
+  animation: pulse-dot 2s ease-in-out infinite;
 }
 
-@keyframes blink {
-  0%,100% { opacity: 1; }
-  50% { opacity: 0.2; }
+@keyframes pulse-dot {
+  0%,100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px var(--cyan), 0 0 16px var(--cyan); }
+  50%      { opacity: 0.4; transform: scale(0.7); box-shadow: 0 0 4px var(--cyan); }
 }
 
 .nav-center {
   display: flex;
-  gap: 0;
-  border: 1px solid var(--wire);
+  border: 1px solid rgba(0,229,255,0.2);
+  border-radius: 2px;
+  overflow: hidden;
 }
 
 .nav-link {
-  padding: 8px 20px;
-  font-size: 11px;
+  padding: 8px 22px;
+  font-size: 10px;
   letter-spacing: 3px;
   text-transform: uppercase;
-  font-weight: 500;
-  color: var(--ash);
+  font-weight: 600;
+  color: rgba(0,229,255,0.4);
   text-decoration: none;
-  border-right: 1px solid var(--wire);
+  border-right: 1px solid rgba(0,229,255,0.15);
   transition: all 0.2s;
   font-family: var(--body);
+  position: relative;
 }
 
 .nav-link:last-child { border-right: none; }
-.nav-link:hover { color: var(--snow); background: var(--black3); }
-.nav-link.active { color: var(--white); background: var(--black3); }
+.nav-link:hover { color: var(--cyan); background: rgba(0,229,255,0.05); }
+.nav-link.active {
+  color: var(--cyan);
+  background: rgba(0,229,255,0.08);
+  text-shadow: 0 0 12px rgba(0,229,255,0.6);
+}
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+}
 
 .nav-right {
   display: flex;
@@ -127,13 +196,14 @@ nav {
 .nav-budget {
   font-family: var(--mono);
   font-size: 13px;
-  color: var(--gold);
+  color: var(--cyan);
   letter-spacing: 1px;
+  text-shadow: 0 0 12px rgba(0,229,255,0.5);
 }
 
 .nav-user {
-  font-size: 11px;
-  letter-spacing: 2px;
+  font-size: 10px;
+  letter-spacing: 3px;
   text-transform: uppercase;
   color: var(--ash);
 }
@@ -141,8 +211,8 @@ nav {
 .btn-nav-exit {
   padding: 6px 14px;
   background: transparent;
-  border: 1px solid var(--wire2);
-  color: var(--ash);
+  border: 1px solid rgba(255,0,102,0.3);
+  color: rgba(255,0,102,0.6);
   font-size: 10px;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -150,14 +220,19 @@ nav {
   font-family: var(--body);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s;
+}
+.btn-nav-exit:hover {
+  border-color: var(--pink);
+  color: var(--pink);
+  text-shadow: 0 0 8px var(--pink);
+  box-shadow: 0 0 12px rgba(255,0,102,0.2);
 }
 
-.btn-nav-exit:hover { border-color: var(--red); color: var(--red); }
+/* ── PAGE ROOT ── */
+.page-root { padding-top: 56px; min-height: 100vh; position: relative; z-index: 1; }
 
-/* ── GLOBAL COMPONENTS ── */
-.page-root { padding-top: 56px; min-height: 100vh; }
-
+/* ── BUTTONS ── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -171,63 +246,76 @@ nav {
   text-decoration: none;
   border: none;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s;
   position: relative;
   overflow: hidden;
+  clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
 }
 
-.btn::before {
-  content: '';
-  position: absolute;
-  top: 0; left: -100%;
-  width: 100%; height: 100%;
-  background: rgba(255,255,255,0.08);
-  transition: left 0.3s;
+.btn-red {
+  background: var(--pink);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(255,0,102,0.4), 0 0 40px rgba(255,0,102,0.15);
+  text-shadow: 0 0 8px rgba(255,255,255,0.4);
+}
+.btn-red:hover {
+  background: var(--pink2);
+  box-shadow: 0 0 30px rgba(255,0,102,0.7), 0 0 60px rgba(255,0,102,0.25);
 }
 
-.btn:hover::before { left: 0; }
+.btn-gold {
+  background: transparent;
+  color: var(--cyan);
+  border: 1px solid var(--cyan);
+  box-shadow: 0 0 16px rgba(0,229,255,0.25), inset 0 0 16px rgba(0,229,255,0.04);
+  text-shadow: 0 0 8px rgba(0,229,255,0.5);
+  clip-path: none;
+}
+.btn-gold:hover {
+  background: rgba(0,229,255,0.1);
+  box-shadow: 0 0 28px rgba(0,229,255,0.5), inset 0 0 20px rgba(0,229,255,0.08);
+}
 
-.btn-red { background: var(--red); color: #fff; }
-.btn-red:hover { background: var(--red2); }
-.btn-gold { background: var(--gold); color: #000; }
-.btn-gold:hover { background: var(--gold2); }
 .btn-ghost {
   background: transparent;
   color: var(--mist);
   border: 1px solid var(--wire2);
 }
-.btn-ghost:hover { border-color: var(--snow); color: var(--white); }
+.btn-ghost:hover { border-color: var(--cyan); color: var(--cyan); }
 
 /* ── TYPOGRAPHY ── */
 .display { font-family: var(--speed); font-weight: 700; text-transform: uppercase; }
-.mono { font-family: var(--mono); }
+.mono    { font-family: var(--mono); }
 
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar { width: 3px; height: 3px; }
-::-webkit-scrollbar-track { background: var(--black2); }
-::-webkit-scrollbar-thumb { background: var(--red); }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
 
 /* ── INPUTS ── */
 input, select, textarea {
-  background: var(--black3);
-  border: 1px solid var(--wire);
+  background: var(--bg3);
+  border: 1px solid rgba(0,229,255,0.15);
   color: var(--snow);
   padding: 11px 14px;
   font-family: var(--body);
   font-size: 14px;
   outline: none;
   width: 100%;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
-input:focus, select:focus, textarea:focus { border-color: var(--red); }
-input::placeholder { color: var(--ash); }
+input:focus, select:focus, textarea:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 12px rgba(0,229,255,0.2), inset 0 0 8px rgba(0,229,255,0.05);
+}
+input::placeholder { color: rgba(0,229,255,0.25); }
 
 label {
   display: block;
   font-size: 10px;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: var(--ash);
+  color: rgba(0,229,255,0.45);
   font-weight: 600;
   margin-bottom: 6px;
   font-family: var(--body);
@@ -236,27 +324,27 @@ label {
 .form-group { margin-bottom: 1.2rem; }
 
 /* ── SCORE BARS ── */
-.sbar { height: 2px; background: var(--black4); position: relative; }
+.sbar { height: 2px; background: var(--bg4); position: relative; }
 .sbar-fill { height: 100%; transition: width 0.7s cubic-bezier(.4,0,.2,1); }
-.sbar-fill.sp { background: var(--red); }
-.sbar-fill.ae { background: var(--gold); }
-.sbar-fill.re { background: var(--green); }
+.sbar-fill.sp { background: var(--pink); box-shadow: 0 0 6px var(--pink); }
+.sbar-fill.ae { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+.sbar-fill.re { background: var(--green); box-shadow: 0 0 6px var(--green); }
 
 /* ── MODALS ── */
 .modal-bg {
   display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.88);
+  position: fixed; inset: 0;
+  background: rgba(3,3,12,0.92);
   z-index: 500;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
 }
 .modal-bg.open { display: flex; }
 .modal {
-  background: var(--black2);
-  border: 1px solid var(--wire);
+  background: var(--bg2);
+  border: 1px solid rgba(0,229,255,0.2);
+  box-shadow: 0 0 40px rgba(0,229,255,0.08), 0 0 80px rgba(0,229,255,0.04);
   width: 560px;
   max-width: 95vw;
   max-height: 88vh;
@@ -279,17 +367,16 @@ label {
   font-size: 1.1rem;
   letter-spacing: 3px;
   font-weight: 600;
+  color: var(--cyan);
+  text-shadow: 0 0 12px rgba(0,229,255,0.4);
 }
 .modal-close {
-  background: none;
-  border: none;
-  color: var(--ash);
-  font-size: 1.4rem;
-  cursor: pointer;
-  line-height: 1;
+  background: none; border: none;
+  color: var(--ash); font-size: 1.4rem;
+  cursor: pointer; line-height: 1;
   transition: color 0.2s;
 }
-.modal-close:hover { color: var(--red); }
+.modal-close:hover { color: var(--pink); text-shadow: 0 0 8px var(--pink); }
 .modal-body { padding: 1.5rem; }
 
 .alert {
@@ -297,10 +384,15 @@ label {
   font-size: 13px;
   letter-spacing: 1px;
   margin-bottom: 1rem;
-  border-left: 3px solid var(--red);
-  background: rgba(232,23,10,0.08);
-  color: #ff8880;
+  border-left: 3px solid var(--pink);
+  background: rgba(255,0,102,0.06);
+  color: var(--pink2);
+  box-shadow: inset 0 0 20px rgba(255,0,102,0.03);
 }
+
+/* ── NEON GLOW UTILITY ── */
+.neon-text { text-shadow: 0 0 10px currentColor, 0 0 20px currentColor; }
+.neon-box  { box-shadow: 0 0 12px currentColor, inset 0 0 8px rgba(0,0,0,0.5); }
 </style>
 {% block extra_css %}{% endblock %}
 </head>
@@ -311,17 +403,18 @@ label {
   <a href="{{ url_for('garage') }}" class="nav-logo">
     <span class="nav-logo-dot"></span>
     APEX
+    <span class="nav-logo-jp">峠</span>
   </a>
 
   <div class="nav-center">
-    <a href="{{ url_for('garage') }}" class="nav-link {% if request.endpoint == 'garage' %}active{% endif %}">Garaje</a>
-    <a href="{{ url_for('builder') }}" class="nav-link {% if request.endpoint == 'builder' %}active{% endif %}">Configurador</a>
+    <a href="{{ url_for('garage') }}"  class="nav-link {% if request.endpoint == 'garage'  %}active{% endif %}">ガレージ</a>
+    <a href="{{ url_for('builder') }}" class="nav-link {% if request.endpoint == 'builder' %}active{% endif %}">カスタム</a>
   </div>
 
   <div class="nav-right">
     <span class="nav-budget mono" id="global-budget">€{{ "{:,.0f}".format(session.get('budget', 500000)) }}</span>
     <span class="nav-user">{{ session.username }}</span>
-    <a href="{{ url_for('logout') }}" class="btn-nav-exit">Salir</a>
+    <a href="{{ url_for('logout') }}" class="btn-nav-exit">EXIT</a>
   </div>
 </nav>
 {% endif %}

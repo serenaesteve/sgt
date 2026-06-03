@@ -3,80 +3,194 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APEX — Registro</title>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600;700&family=Familjen+Grotesk:ital,wght@0,400;0,500;0,700;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<title>APEX 峠 — Registro</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400;500;600;700&family=Familjen+Grotesk:ital,wght@0,400;0,500;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
-:root{--black:#060606;--black2:#0e0e0e;--black3:#161616;--wire:#2a2a2a;--ash:#555;--fog:#888;--snow:#f0f0f0;--white:#ffffff;--red:#e8170a;--gold:#c9a84c;--speed:'Oswald',sans-serif;--body:'Familjen Grotesk',sans-serif;--mono:'DM Mono',monospace;}
+:root {
+  --bg:#03030c;--bg2:#07071a;--bg3:#0d0d24;
+  --wire:rgba(0,229,255,0.12);--wire2:rgba(0,229,255,0.25);
+  --ash:rgba(180,210,255,0.35);--fog:rgba(180,210,255,0.55);--snow:#e0eeff;
+  --cyan:#00e5ff;--cyan2:#80f8ff;--pink:#ff0066;--pink2:#ff3388;--green:#00ff99;
+  --speed:'Oswald',sans-serif;--body:'Familjen Grotesk',sans-serif;
+  --mono:'DM Mono',monospace;--jp:'Noto Sans JP',sans-serif;
+}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;}
-body{background:var(--black);color:var(--snow);font-family:var(--body);overflow:hidden;}
-body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:0.4;}
-.orb{position:fixed;width:500px;height:500px;border-radius:50%;pointer-events:none;}
-.orb-1{top:-100px;left:-100px;background:radial-gradient(circle,rgba(232,23,10,0.1) 0%,transparent 65%);}
-.orb-2{bottom:-100px;right:-100px;background:radial-gradient(circle,rgba(201,168,76,0.07) 0%,transparent 65%);}
-.grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(232,23,10,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(232,23,10,0.03) 1px,transparent 1px);background-size:80px 80px;}
+body{background:var(--bg);color:var(--snow);font-family:var(--body);overflow:hidden;}
 
-.layout{display:grid;grid-template-columns:380px 1fr;height:100vh;position:relative;z-index:1;}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,229,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.04) 1px,transparent 1px);
+  background-size:64px 64px;pointer-events:none;z-index:0;
+}
+body::after{
+  content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,229,255,0.012) 2px,rgba(0,229,255,0.012) 4px);
+  pointer-events:none;z-index:0;
+}
 
-.left{display:flex;flex-direction:column;justify-content:center;padding:3rem;background:var(--black2);border-right:1px solid var(--wire);}
-.form-eyebrow{font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--red);margin-bottom:8px;}
-.form-title{font-family:var(--speed);font-size:2.5rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;line-height:1;margin-bottom:0.4rem;}
-.form-sub{font-size:13px;color:var(--ash);margin-bottom:2rem;}
-.form-group{margin-bottom:1.1rem;}
-label{display:block;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--fog);font-weight:600;margin-bottom:6px;}
-input{width:100%;background:var(--black3);border:1px solid var(--wire);color:var(--snow);padding:12px 14px;font-family:var(--body);font-size:15px;outline:none;transition:border-color 0.2s;}
-input:focus{border-color:var(--red);}
-input::placeholder{color:var(--ash);}
-.btn-submit{width:100%;padding:14px;background:var(--red);color:#fff;border:none;font-family:var(--speed);font-size:1rem;font-weight:600;letter-spacing:4px;text-transform:uppercase;cursor:pointer;transition:background 0.2s;margin-top:0.5rem;}
-.btn-submit:hover{background:#ff2010;}
-.form-footer{text-align:center;margin-top:1.5rem;font-size:13px;color:var(--ash);}
-.form-footer a{color:var(--red);text-decoration:none;font-weight:600;}
-.alert{padding:10px 14px;font-size:13px;border-left:3px solid var(--red);background:rgba(232,23,10,0.08);color:#ff8880;margin-bottom:1.2rem;}
+.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;}
+.orb-1{width:700px;height:700px;top:-200px;right:-100px;background:radial-gradient(circle,rgba(255,0,102,0.06) 0%,transparent 65%);}
+.orb-2{width:500px;height:500px;bottom:-150px;left:-100px;background:radial-gradient(circle,rgba(0,229,255,0.06) 0%,transparent 65%);}
 
-.right{display:flex;flex-direction:column;justify-content:center;padding:4rem;position:relative;overflow:hidden;}
-.welcome-big{font-family:var(--speed);font-size:clamp(4rem,8vw,7rem);font-weight:700;text-transform:uppercase;line-height:0.88;letter-spacing:-1px;color:var(--white);}
-.welcome-big em{color:var(--red);font-style:normal;display:block;}
-.welcome-desc{max-width:480px;color:var(--ash);font-size:14px;line-height:1.7;margin-top:2rem;margin-bottom:3rem;}
-.perks{display:flex;flex-direction:column;gap:12px;}
-.perk{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--fog);}
-.perk-dot{width:6px;height:6px;background:var(--red);flex-shrink:0;}
+.kanji-bg{position:fixed;font-family:var(--jp);pointer-events:none;z-index:0;user-select:none;}
+.kanji-1{font-size:22rem;font-weight:700;color:rgba(255,0,102,0.025);top:-40px;right:10%;line-height:1;}
+.kanji-2{font-size:14rem;font-weight:300;color:rgba(0,229,255,0.025);bottom:5%;left:35%;line-height:1;}
+
+.layout{display:grid;grid-template-columns:420px 1fr;height:100vh;position:relative;z-index:1;}
+
+/* ── LEFT: Form ── */
+.left{
+  display:flex;flex-direction:column;justify-content:center;
+  padding:3rem;
+  background:linear-gradient(135deg,rgba(7,7,26,0.98),rgba(3,3,18,0.98));
+  border-right:1px solid rgba(0,229,255,0.15);
+  position:relative;overflow:hidden;
+}
+.left::before{
+  content:'';position:absolute;top:0;right:0;width:2px;height:80px;
+  background:linear-gradient(180deg,var(--pink),transparent);
+  box-shadow:0 0 8px var(--pink);
+}
+.left::after{
+  content:'';position:absolute;top:0;right:0;height:2px;width:80px;
+  background:linear-gradient(270deg,var(--pink),transparent);
+  box-shadow:0 0 8px var(--pink);
+}
+
+.form-eyebrow{font-size:9px;letter-spacing:5px;text-transform:uppercase;color:rgba(255,0,102,0.6);margin-bottom:6px;font-family:var(--mono);}
+.form-title{font-family:var(--speed);font-size:2.2rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;line-height:1;}
+.form-title-jp{font-family:var(--jp);font-size:0.85rem;font-weight:300;color:rgba(255,0,102,0.5);letter-spacing:4px;margin-top:4px;display:block;}
+.form-sub{font-size:12px;color:var(--ash);margin-top:8px;margin-bottom:1.8rem;}
+
+.form-group{margin-bottom:1rem;}
+label{display:block;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:rgba(0,229,255,0.5);font-weight:600;margin-bottom:5px;font-family:var(--mono);}
+input{
+  width:100%;background:rgba(0,229,255,0.04);
+  border:1px solid rgba(0,229,255,0.18);border-left:2px solid rgba(0,229,255,0.4);
+  color:var(--snow);padding:11px 13px;font-family:var(--body);font-size:14px;outline:none;transition:all 0.2s;
+}
+input:focus{border-color:var(--cyan);border-left-color:var(--cyan);background:rgba(0,229,255,0.06);box-shadow:0 0 14px rgba(0,229,255,0.14);}
+input::placeholder{color:rgba(0,229,255,0.2);}
+
+.btn-submit{
+  width:100%;padding:13px;
+  background:var(--pink);color:#fff;border:none;
+  font-family:var(--speed);font-size:0.95rem;font-weight:600;
+  letter-spacing:4px;text-transform:uppercase;cursor:pointer;
+  transition:all 0.25s;margin-top:0.4rem;
+  box-shadow:0 0 20px rgba(255,0,102,0.4);
+  clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+}
+.btn-submit:hover{background:var(--pink2);box-shadow:0 0 32px rgba(255,0,102,0.7);}
+
+.form-footer{text-align:center;margin-top:1.2rem;font-size:12px;color:var(--ash);}
+.form-footer a{color:var(--cyan);text-decoration:none;font-weight:600;text-shadow:0 0 8px rgba(0,229,255,0.4);}
+.alert{padding:9px 13px;font-size:12px;border-left:2px solid var(--pink);background:rgba(255,0,102,0.06);color:var(--pink2);margin-bottom:1.1rem;}
+
+/* ── RIGHT: Welcome ── */
+.right{
+  display:flex;flex-direction:column;justify-content:center;
+  padding:4rem;position:relative;overflow:hidden;
+}
+
+/* Animated scan line */
+.right::before{
+  content:'';position:absolute;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,229,255,0.4),transparent);
+  box-shadow:0 0 8px rgba(0,229,255,0.4);
+  animation:scan-right 5s linear infinite;
+}
+@keyframes scan-right{from{top:0;}to{top:100%;}}
+
+.welcome-big{
+  font-family:var(--speed);font-size:clamp(4rem,8vw,7rem);
+  font-weight:700;text-transform:uppercase;line-height:0.88;letter-spacing:-1px;
+}
+.welcome-big .w1{color:var(--snow);}
+.welcome-big .w2{color:var(--cyan);text-shadow:0 0 30px rgba(0,229,255,0.6);display:block;}
+.welcome-big .w3{color:var(--pink);text-shadow:0 0 30px rgba(255,0,102,0.6);display:block;}
+
+.welcome-sub{font-family:var(--jp);font-size:1rem;font-weight:300;color:rgba(0,229,255,0.4);letter-spacing:6px;margin-top:8px;}
+
+.welcome-desc{max-width:520px;color:var(--ash);font-size:13px;line-height:1.8;margin-top:2rem;margin-bottom:2.5rem;}
+
+.perks{display:flex;flex-direction:column;gap:10px;}
+.perk{display:flex;align-items:center;gap:14px;font-size:13px;color:var(--fog);}
+.perk-icon{
+  width:28px;height:28px;border:1px solid rgba(0,229,255,0.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;color:var(--cyan);flex-shrink:0;
+  box-shadow:0 0 8px rgba(0,229,255,0.15);
+}
 .perk span{color:var(--snow);font-weight:600;margin-right:4px;}
-.budget-pill{display:inline-flex;align-items:center;gap:10px;padding:10px 20px;border:1px solid var(--gold);margin-top:2rem;}
-.budget-pill-num{font-family:var(--mono);font-size:1.5rem;color:var(--gold);}
-.budget-pill-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--ash);}
-::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:var(--red);}
+
+.budget-pill{
+  display:inline-flex;align-items:center;gap:16px;
+  padding:12px 20px;margin-top:2rem;
+  border:1px solid rgba(0,229,255,0.25);
+  background:rgba(0,229,255,0.04);
+  box-shadow:0 0 20px rgba(0,229,255,0.08);
+}
+.budget-num{font-family:var(--mono);font-size:1.6rem;color:var(--cyan);text-shadow:0 0 12px rgba(0,229,255,0.5);}
+.budget-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(0,229,255,0.4);}
+
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--cyan);}
 </style>
 </head>
 <body>
-<div class="grid-bg"></div>
 <div class="orb orb-1"></div>
 <div class="orb orb-2"></div>
+<div class="kanji-bg kanji-1">速</div>
+<div class="kanji-bg kanji-2">夜</div>
+
 <div class="layout">
   <div class="left">
-    <div class="form-eyebrow">Nuevo piloto</div>
-    <div class="form-title">Registro</div>
-    <div class="form-sub">Crea tu garaje personal</div>
-    {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+    <div class="form-eyebrow">// NUEVO PILOTO ——</div>
+    <div class="form-title">
+      REGISTRO
+      <span class="form-title-jp">新規登録</span>
+    </div>
+    <div class="form-sub">Crea tu garaje en Tokyo</div>
+
+    {% if error %}<div class="alert">⚠ {{ error }}</div>{% endif %}
+
     <form method="POST" action="{{ url_for('register') }}">
-      <div class="form-group"><label>Usuario</label><input type="text" name="username" placeholder="piloto_veloce" required autocomplete="off"></div>
-      <div class="form-group"><label>Email</label><input type="email" name="email" placeholder="tu@email.com" required></div>
-      <div class="form-group"><label>Contraseña</label><input type="password" name="password" placeholder="••••••••" required minlength="6"></div>
-      <button type="submit" class="btn-submit">Crear mi garaje →</button>
+      <div class="form-group">
+        <label>// usuario</label>
+        <input type="text" name="username" placeholder="piloto_veloce" required autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>// email</label>
+        <input type="email" name="email" placeholder="tu@email.com" required>
+      </div>
+      <div class="form-group">
+        <label>// contraseña</label>
+        <input type="password" name="password" placeholder="••••••••" required minlength="6">
+      </div>
+      <button type="submit" class="btn-submit">CREAR MI GARAJE →</button>
     </form>
-    <div class="form-footer">¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Acceder</a></div>
+    <div class="form-footer">¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Acceder aquí</a></div>
   </div>
+
   <div class="right">
-    <div class="welcome-big">Join<em>the</em>Grid</div>
-    <div class="welcome-desc">Accede al configurador 3D más exclusivo. Elige entre Ferrari, Lamborghini, Porsche, McLaren y Bugatti. Personaliza cada detalle, compite en carreras virtuales y acumula presupuesto.</div>
+    <div class="welcome-big">
+      <span class="w1">JOIN</span>
+      <span class="w2">THE</span>
+      <span class="w3">GRID</span>
+    </div>
+    <div class="welcome-sub">東京ドリフト</div>
+    <div class="welcome-desc">Accede al configurador 3D más exclusivo. 10 marcas de supercoches, modelos GLB reales, colores PBR y personalización completa. Compite, acumula y construye tu flota de ensueño.</div>
     <div class="perks">
-      <div class="perk"><div class="perk-dot"></div><p><span>5 marcas</span> con modelos reales y precios de mercado</p></div>
-      <div class="perk"><div class="perk-dot"></div><p><span>Configurador 3D</span> con rotación en tiempo real</p></div>
-      <div class="perk"><div class="perk-dot"></div><p><span>IA experta</span> que asesora tu build con Ollama</p></div>
-      <div class="perk"><div class="perk-dot"></div><p><span>Carreras y desafíos</span> para ganar más presupuesto</p></div>
+      <div class="perk"><div class="perk-icon">◈</div><p><span>10 marcas</span> · modelos 3D GLB reales</p></div>
+      <div class="perk"><div class="perk-icon">◈</div><p><span>Configurador</span> · colores, llantas, interior, calipers</p></div>
+      <div class="perk"><div class="perk-icon">◈</div><p><span>Desafíos</span> · gana presupuesto completando retos</p></div>
+      <div class="perk"><div class="perk-icon">◈</div><p><span>IA experta</span> · asesoría con Ollama integrada</p></div>
     </div>
     <div class="budget-pill">
-      <div class="budget-pill-num">€500,000</div>
-      <div class="budget-pill-label">presupuesto<br>de bienvenida</div>
+      <div class="budget-num">€5,000,000</div>
+      <div class="budget-label">presupuesto<br>de bienvenida</div>
     </div>
   </div>
 </div>

@@ -2,8 +2,21 @@
 {% block title %}APEX — Mi Garaje{% endblock %}
 
 {% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
-.garage-wrap { padding: 2.5rem; }
+.garage-wrap { padding: 2.5rem; position:relative; }
+
+/* Tokyo kanji decoration */
+.garage-wrap::before {
+  content:'ガレージ';
+  position:fixed;top:80px;right:-20px;
+  font-family:'Noto Sans JP',sans-serif;
+  font-size:8rem;font-weight:700;
+  color:rgba(0,229,255,0.025);
+  pointer-events:none;z-index:0;line-height:1;
+  letter-spacing:-4px;
+  writing-mode:vertical-rl;
+}
 
 /* ── HEADER ── */
 .g-header {
@@ -12,27 +25,30 @@
   align-items: end;
   margin-bottom: 2.5rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--wire);
+  border-bottom: 1px solid rgba(0,229,255,0.15);
+  position:relative;z-index:1;
 }
 
 .g-eyebrow {
   font-size: 10px;
   letter-spacing: 4px;
   text-transform: uppercase;
-  color: var(--red);
+  color: rgba(0,229,255,0.5);
   margin-bottom: 6px;
+  font-family: var(--mono);
 }
 
 .g-title {
   font-family: var(--speed);
-  font-size: 3rem;
+  font-size: 3.5rem;
   font-weight: 700;
   letter-spacing: 4px;
   text-transform: uppercase;
   line-height: 1;
+  text-shadow: 0 0 40px rgba(0,229,255,0.15);
 }
 
-.g-sub { color: var(--ash); font-size: 13px; margin-top: 6px; }
+.g-sub { color: rgba(0,229,255,0.35); font-size: 12px; margin-top: 6px; font-family: var(--mono); letter-spacing: 2px; }
 
 .g-actions { display: flex; gap: 10px; align-items: center; }
 
@@ -40,14 +56,15 @@
 .stats-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  border: 1px solid var(--wire);
+  border: 1px solid rgba(0,229,255,0.15);
   margin-bottom: 2.5rem;
-  background: var(--black2);
+  background: rgba(0,229,255,0.02);
+  box-shadow: 0 0 30px rgba(0,229,255,0.04);
 }
 
 .stat-cell {
-  padding: 1.2rem 1.5rem;
-  border-right: 1px solid var(--wire);
+  padding: 1.4rem 1.6rem;
+  border-right: 1px solid rgba(0,229,255,0.1);
   position: relative;
   overflow: hidden;
 }
@@ -57,26 +74,26 @@
 .stat-cell::before {
   content: '';
   position: absolute;
-  bottom: 0; left: 0;
-  height: 2px;
-  width: 100%;
-  background: transparent;
-  transition: background 0.3s;
+  top: 0; left: 0;
+  height: 2px; width: 0%;
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+  transition: width 0.4s ease;
 }
-
-.stat-cell:hover::before { background: var(--red); }
+.stat-cell:hover::before { width: 100%; }
 
 .stat-label {
-  font-size: 10px;
-  letter-spacing: 3px;
+  font-size: 9px;
+  letter-spacing: 4px;
   text-transform: uppercase;
-  color: var(--ash);
-  margin-bottom: 6px;
+  color: rgba(0,229,255,0.4);
+  margin-bottom: 8px;
+  font-family: var(--mono);
 }
 
 .stat-val {
   font-family: var(--speed);
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 700;
   letter-spacing: 2px;
   line-height: 1;
@@ -85,22 +102,30 @@
 /* ── BUILDS GRID ── */
 .builds-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1px;
-  background: var(--wire);
-  border: 1px solid var(--wire);
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 12px;
 }
 
 /* ── BUILD CARD ── */
 .build-card {
-  background: var(--black2);
+  background: linear-gradient(160deg, rgba(7,7,22,0.98) 0%, rgba(3,3,14,0.98) 100%);
+  border: 1px solid rgba(0,229,255,0.12);
   position: relative;
   overflow: hidden;
-  transition: background 0.2s;
+  transition: all 0.25s;
   cursor: default;
 }
-
-.build-card:hover { background: var(--black3); }
+.build-card::before {
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,229,255,0.3),transparent);
+  transition: opacity 0.25s;
+}
+.build-card:hover {
+  border-color: rgba(0,229,255,0.3);
+  box-shadow: 0 0 24px rgba(0,229,255,0.08), 0 8px 32px rgba(0,0,0,0.4);
+  transform: translateY(-2px);
+}
+.build-card:hover::before { opacity: 1.5; }
 
 .bc-colorbar { height: 3px; width: 100%; }
 
@@ -124,34 +149,36 @@
 }
 
 .bc-engine {
-  font-size: 12px;
-  color: var(--ash);
+  font-size: 11px;
+  color: rgba(0,229,255,0.35);
   margin-top: 3px;
-  font-style: italic;
+  font-family: var(--mono);
+  letter-spacing: 1px;
 }
 
 .bc-price {
   font-family: var(--mono);
-  font-size: 1rem;
-  color: var(--gold);
+  font-size: 1.1rem;
+  color: var(--cyan);
+  text-shadow: 0 0 12px rgba(0,229,255,0.4);
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--wire);
+  border-top: 1px solid rgba(0,229,255,0.1);
 }
 
 .bc-scores { margin-top: 1rem; display: flex; flex-direction: column; gap: 7px; }
 
 .score-row { display: flex; align-items: center; gap: 8px; }
-.score-lbl { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ash); width: 64px; }
-.score-track { flex: 1; height: 2px; background: var(--black4, #1e1e1e); }
-.score-num { font-family: var(--mono); font-size: 11px; width: 26px; text-align: right; }
+.score-lbl { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: rgba(0,229,255,0.35); width: 60px; font-family: var(--mono); }
+.score-track { flex: 1; height: 2px; background: rgba(0,229,255,0.06); border-radius: 1px; }
+.score-num { font-family: var(--mono); font-size: 10px; width: 26px; text-align: right; color: rgba(180,210,255,0.6); }
 
 .bc-footer {
   display: flex;
   gap: 6px;
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--wire);
+  border-top: 1px solid rgba(0,229,255,0.08);
 }
 
 .bc-btn {
@@ -167,8 +194,14 @@
   transition: all 0.2s;
 }
 
-.bc-btn-race { background: var(--red); color: #fff; }
-.bc-btn-race:hover { background: #ff2010; }
+.bc-btn-race {
+  background: var(--pink); color: #fff;
+  box-shadow: 0 0 14px rgba(255,0,102,0.35);
+}
+.bc-btn-race:hover {
+  background: var(--pink2);
+  box-shadow: 0 0 22px rgba(255,0,102,0.6);
+}
 .bc-btn-del {
   background: transparent;
   color: var(--ash);
@@ -177,11 +210,12 @@
   display: flex; align-items: center; justify-content: center;
   font-size: 14px;
 }
-.bc-btn-del:hover { border-color: var(--red); color: var(--red); }
+.bc-btn-del:hover { border-color: var(--pink); color: var(--pink); box-shadow: 0 0 8px rgba(255,0,102,0.2); }
 
 /* ── EMPTY STATE ── */
 .empty {
-  background: var(--black2);
+  background: rgba(0,229,255,0.01);
+  border: 1px dashed rgba(0,229,255,0.1);
   padding: 6rem 2rem;
   text-align: center;
   grid-column: 1 / -1;
@@ -190,34 +224,36 @@
 .empty-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
-  opacity: 0.15;
+  opacity: 0.2;
+  filter: drop-shadow(0 0 10px rgba(0,229,255,0.3));
 }
 
 .empty-title {
   font-family: var(--speed);
   font-size: 2rem;
   letter-spacing: 4px;
-  color: var(--ash);
+  color: rgba(0,229,255,0.3);
   margin-bottom: 0.5rem;
 }
 
-.empty-sub { color: var(--ash); font-size: 13px; margin-bottom: 2rem; }
+.empty-sub { color: rgba(180,210,255,0.3); font-size: 13px; margin-bottom: 2rem; font-family: var(--mono); letter-spacing: 1px; }
 
 /* ── CHALLENGES MODAL ── */
 .ch-card {
-  background: var(--black3);
-  border: 1px solid var(--wire);
+  background: rgba(0,229,255,0.02);
+  border: 1px solid rgba(0,229,255,0.1);
+  border-left: 3px solid rgba(0,229,255,0.3);
   padding: 1.2rem;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
-.ch-card:hover { border-color: var(--wire2, #333); }
-.ch-card.done { opacity: 0.4; }
+.ch-card:hover { border-color: rgba(0,229,255,0.25); border-left-color: var(--cyan); background: rgba(0,229,255,0.04); }
+.ch-card.done { opacity: 0.35; }
 
 .ch-name {
   font-family: var(--speed);
@@ -228,11 +264,12 @@
   margin-bottom: 3px;
 }
 
-.ch-desc { font-size: 12px; color: var(--ash); }
+.ch-desc { font-size: 11px; color: rgba(0,229,255,0.4); font-family: var(--mono); letter-spacing: 1px; }
 
 .ch-reward {
   font-family: var(--mono);
-  color: var(--gold);
+  color: var(--cyan);
+  text-shadow: 0 0 10px rgba(0,229,255,0.4);
   font-size: 1rem;
   text-align: right;
   white-space: nowrap;
@@ -247,23 +284,30 @@
 }
 
 .ch-claim {
-  padding: 6px 14px;
-  background: var(--gold);
-  border: none;
-  color: #000;
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
   font-family: var(--speed);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.2s;
-  margin-top: 6px;
+  transition: all 0.2s;
+  margin-top: 8px;
   display: block;
   width: 100%;
+  text-shadow: 0 0 8px rgba(0,229,255,0.4);
+  box-shadow: 0 0 10px rgba(0,229,255,0.1), inset 0 0 10px rgba(0,229,255,0.03);
 }
 
-.ch-claim:hover { background: #f0c060; }
+.ch-claim:hover {
+  background: var(--cyan);
+  color: #000;
+  box-shadow: 0 0 20px rgba(0,229,255,0.5);
+  text-shadow: none;
+}
 
 /* ── RACE MODAL ── */
 .race-vs {
@@ -333,7 +377,7 @@
 .bet-btn:hover, .bet-btn.sel {
   border-color: var(--gold);
   color: var(--gold);
-  background: rgba(201,168,76,0.05);
+  background: rgba(0,229,255,0.05);
 }
 
 .race-result {
@@ -349,8 +393,8 @@
 }
 
 .race-result.lose {
-  background: rgba(232,23,10,0.07);
-  border: 1px solid rgba(232,23,10,0.2);
+  background: rgba(255,0,102,0.07);
+  border: 1px solid rgba(255,0,102,0.2);
 }
 
 .result-title {
@@ -416,6 +460,17 @@
         <div class="bc-brand">{{ b.brand }}</div>
         <div class="bc-name">{{ b.name }}</div>
         <div class="bc-engine">{{ b.engine[:40] }}{% if b.engine|length > 40 %}…{% endif %}</div>
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+          <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:2px 7px;border:1px solid #1e1e1e;color:#444;font-family:var(--mono);">
+            {{ b.wheel_name }}
+          </span>
+          <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:2px 7px;border:1px solid #1e1e1e;color:#444;font-family:var(--mono);">
+            {{ b.interior_name }}
+          </span>
+          <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:2px 7px;border:1px solid {{ b.caliper_hex }};color:{{ b.caliper_hex }};font-family:var(--mono);">
+            ● {{ b.caliper_name }}
+          </span>
+        </div>
         <div class="bc-price">€{{ "{:,.0f}".format(b.total_price) }}</div>
         <div class="bc-scores">
           <div class="score-row">
@@ -518,11 +573,13 @@ const RIVALS = [
 ];
 
 const CHALLENGES = [
-  {id:'ch1',name:'Eficiencia máxima',desc:'Coche <€200K con velocidad ≥70',reward:80000,check:b=>b.some(x=>x.total_price<=200000&&x.score_speed>=70)},
-  {id:'ch2',name:'Maestro del asfalto',desc:'Velocidad ≥90 en cualquier build',reward:120000,check:b=>b.some(x=>x.score_speed>=90)},
-  {id:'ch3',name:'Joya del paddock',desc:'Estética ≥88 y velocidad ≥75',reward:95000,check:b=>b.some(x=>x.score_aesthetic>=88&&x.score_speed>=75)},
-  {id:'ch4',name:'Cuore sportivo',desc:'Ferrari con carbon_pack y aero_kit',reward:60000,check:b=>b.some(x=>x.brand==='Ferrari'&&x.extras&&x.extras.includes('carbon_pack')&&x.extras.includes('aero_kit'))},
-  {id:'ch5',name:'Coleccionista',desc:'3 o más builds en el garaje',reward:50000,check:b=>b.length>=3}
+  {id:'ch1',name:'Eficiencia máxima',  desc:'Porsche o Maserati con velocidad ≥75',       reward:250000, check:b=>b.some(x=>['Porsche','Maserati'].includes(x.brand)&&x.score_speed>=75)},
+  {id:'ch2',name:'Maestro del asfalto',desc:'Velocidad ≥90 en cualquier build',             reward:400000, check:b=>b.some(x=>x.score_speed>=90)},
+  {id:'ch3',name:'Joya del paddock',   desc:'Estética ≥88 y velocidad ≥80',                reward:350000, check:b=>b.some(x=>x.score_aesthetic>=88&&x.score_speed>=80)},
+  {id:'ch4',name:'Cuore sportivo',     desc:'Ferrari con carbon_pack y aero_kit',           reward:200000, check:b=>b.some(x=>x.brand==='Ferrari'&&x.extras&&x.extras.includes('carbon_pack')&&x.extras.includes('aero_kit'))},
+  {id:'ch5',name:'Coleccionista',      desc:'3 o más builds en el garaje',                  reward:150000, check:b=>b.length>=3},
+  {id:'ch6',name:'Hypercar Club',      desc:'Build de Bugatti o Maserati',                  reward:600000, check:b=>b.some(x=>['Bugatti','Maserati'].includes(x.brand))},
+  {id:'ch7',name:'Alcántara VIP',      desc:'Interior Alcántara Racing en cualquier build', reward:180000, check:b=>b.some(x=>x.interior_id==='alcantara')},
 ];
 
 function fmtEur(n){return '€'+Math.round(n).toLocaleString('es-ES');}
