@@ -286,6 +286,10 @@ def login_required(f):
     def decorated(*args, **kwargs):
         if 'user_id' not in session:
             return redirect(url_for('login'))
+        user = db.session.get(User, session['user_id'])
+        if user is None:
+            session.clear()
+            return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated
 
@@ -392,7 +396,7 @@ def logout():
 @app.route('/garage')
 @login_required
 def garage():
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session["user_id"])
     builds = CarBuild.query.filter_by(user_id=user.id).order_by(CarBuild.created_at.desc()).all()
     wheel_names    = {w['id']: w['name']    for w in WHEELS}
     interior_names = {i['id']: i['name']    for i in INTERIORS}
@@ -428,7 +432,7 @@ def garage():
 @app.route('/builder')
 @login_required
 def builder():
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session["user_id"])
     return render_template('builder.html',
         user=user,
         car_data=CAR_DATA,
@@ -439,6 +443,12 @@ def builder():
         extras=EXTRAS
     )
 
+@app.route('/race-game')
+@login_required
+def race_game():
+    user = db.session.get(User, session["user_id"])
+    return render_template('race_game.html', user=user)
+
 @app.route('/api/car-data')
 @login_required
 def api_car_data():
@@ -448,7 +458,7 @@ def api_car_data():
 @login_required
 def save_build():
     data = request.json
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session["user_id"])
 
     brand       = data.get('brand')
     model       = data.get('model')
@@ -559,7 +569,7 @@ Responde en español, con tono apasionado y experto. Sé directo y concreto."""
 def update_budget():
     data = request.json
     amount = data.get('amount', 0)
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session["user_id"])
     user.budget += amount
     db.session.commit()
     return jsonify({'success': True, 'new_budget': user.budget})

@@ -310,102 +310,46 @@
 }
 
 /* ── RACE MODAL ── */
-.race-vs {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 1rem;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.race-car {
-  background: var(--black3);
-  border: 1px solid var(--wire);
-  padding: 1rem;
-  text-align: center;
-}
-
-.race-car-name {
-  font-family: var(--speed);
-  font-size: 1rem;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-
-.race-car-speed {
-  font-family: var(--mono);
-  font-size: 2rem;
-  color: var(--red);
-  line-height: 1;
-}
-
-.race-car-label {
-  font-size: 10px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--ash);
-  margin-bottom: 4px;
-}
-
-.race-vs-txt {
-  font-family: var(--speed);
-  font-size: 2rem;
-  color: var(--ash);
-  text-align: center;
-}
+#race-modal .modal { max-width: 680px; width: 95vw; }
 
 .bet-opts {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-top: 8px;
-  margin-bottom: 1.2rem;
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-top: 8px; margin-bottom: 1.2rem;
 }
-
 .bet-btn {
   padding: 8px 14px;
-  background: var(--black3);
-  border: 1px solid var(--wire);
-  color: var(--ash);
-  font-family: var(--mono);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
+  background: var(--black3); border: 1px solid var(--wire);
+  color: var(--ash); font-family: var(--mono); font-size: 12px;
+  cursor: pointer; transition: all 0.2s;
 }
-
 .bet-btn:hover, .bet-btn.sel {
-  border-color: var(--gold);
-  color: var(--gold);
+  border-color: var(--gold); color: var(--gold);
   background: rgba(0,229,255,0.05);
 }
 
-.race-result {
-  display: none;
-  text-align: center;
-  padding: 1.5rem;
-  margin-top: 1rem;
+/* Pre-race header */
+.pre-race-header {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  gap: 1rem; align-items: center; margin-bottom: 1.5rem;
+}
+.prc { background: var(--black3); border: 1px solid var(--wire); padding: 1rem; text-align: center; }
+.prc-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ash); margin-bottom: 4px; }
+.prc-name { font-family: var(--speed); font-size: 1rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 2px; }
+.prc-spd { font-family: var(--mono); font-size: 2rem; color: var(--red); line-height: 1; }
+.prc-vs { font-family: var(--speed); font-size: 2rem; color: var(--ash); text-align: center; }
+
+/* Rival chips */
+.rival-chips { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.rival-chip {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 2px;
+  border: 1px solid; padding: 3px 10px; min-width: 110px;
 }
 
-.race-result.win {
-  background: rgba(61,220,132,0.07);
-  border: 1px solid rgba(61,220,132,0.2);
+/* Race info note */
+.race-note {
+  font-size: 10px; letter-spacing: 2px; color: var(--ash);
+  font-family: var(--mono); margin-bottom: 1rem; text-align: center;
 }
-
-.race-result.lose {
-  background: rgba(255,0,102,0.07);
-  border: 1px solid rgba(255,0,102,0.2);
-}
-
-.result-title {
-  font-family: var(--speed);
-  font-size: 3rem;
-  letter-spacing: 4px;
-  font-weight: 700;
-}
-
-.result-title.win { color: var(--green); }
-.result-title.lose { color: var(--red); }
 </style>
 {% endblock %}
 
@@ -490,7 +434,7 @@
           </div>
         </div>
         <div class="bc-footer">
-          <button class="bc-btn bc-btn-race" onclick="openRace({{ b.id }},'{{ b.name }}',{{ b.score_speed }})">▶ Carrera</button>
+          <button class="bc-btn bc-btn-race" onclick='openRace({{ b.id }}, {{ b.name|tojson }}, {{ b.score_speed }})'>▶ Carrera</button>
           <button class="bc-btn bc-btn-del" onclick="delBuild({{ b.id }},this)" title="Eliminar">✕</button>
         </div>
       </div>
@@ -517,45 +461,42 @@
 <div class="modal-bg" id="race-modal">
   <div class="modal">
     <div class="modal-head">
-      <span class="modal-title">🏁 Carrera Virtual</span>
-      <button class="modal-close" onclick="closeMod('race-modal')">×</button>
+      <span class="modal-title">🏁 APEX Race</span>
+      <button class="modal-close" onclick="closeRaceModal()">×</button>
     </div>
     <div style="padding:0.8rem 1.5rem;border-bottom:1px solid var(--wire);font-family:var(--mono);color:var(--gold);font-size:0.9rem;" id="race-budget-row">
       Presupuesto: €{{ "{:,.0f}".format(user.budget) }}
     </div>
     <div class="modal-body">
-      <div class="race-vs">
-        <div class="race-car">
-          <div class="race-car-label">Tu coche</div>
-          <div class="race-car-name" id="my-name">—</div>
-          <div class="race-car-speed" id="my-spd">—</div>
-          <div style="font-size:10px;color:var(--ash);letter-spacing:1px;margin-top:2px;">puntos velocidad</div>
+
+      <div class="pre-race-header">
+        <div class="prc">
+          <div class="prc-label">Tu coche</div>
+          <div class="prc-name" id="my-name">—</div>
+          <div class="prc-spd" id="my-spd">—</div>
+          <div style="font-size:10px;color:var(--ash);letter-spacing:1px;margin-top:2px;">SPEED RATING</div>
         </div>
-        <div class="race-vs-txt">VS</div>
-        <div class="race-car">
-          <div class="race-car-label">Rival</div>
-          <div class="race-car-name" id="rival-name">—</div>
-          <div class="race-car-speed" id="rival-spd">—</div>
-          <div style="font-size:10px;color:var(--ash);letter-spacing:1px;margin-top:2px;">puntos velocidad</div>
+        <div class="prc-vs">VS</div>
+        <div class="prc">
+          <div class="prc-label">Rivales en pista</div>
+          <div class="rival-chips" id="rival-chips"></div>
         </div>
       </div>
+
+      <div class="race-note">🏎️ 3 VUELTAS · CIRCUITO APEX · Conduce en 3D, con choques y adelantamientos reales</div>
 
       <label>Apuesta</label>
       <div class="bet-opts">
-        <button class="bet-btn" onclick="selBet(5000,this)">€5K</button>
-        <button class="bet-btn" onclick="selBet(15000,this)">€15K</button>
-        <button class="bet-btn" onclick="selBet(30000,this)">€30K</button>
-        <button class="bet-btn" onclick="selBet(50000,this)">€50K</button>
-        <button class="bet-btn" onclick="selBet(100000,this)">€100K</button>
+        <button class="bet-btn sel" data-bet="0" onclick="selBet(0,this)">Sin apuesta</button>
+        <button class="bet-btn" data-bet="5000" onclick="selBet(5000,this)">€5K</button>
+        <button class="bet-btn" data-bet="15000" onclick="selBet(15000,this)">€15K</button>
+        <button class="bet-btn" data-bet="30000" onclick="selBet(30000,this)">€30K</button>
+        <button class="bet-btn" data-bet="50000" onclick="selBet(50000,this)">€50K</button>
+        <button class="bet-btn" data-bet="100000" onclick="selBet(100000,this)">€100K</button>
       </div>
+      <div class="race-note">Termina P1 para ganar la apuesta. P2-P4 la pierdes.</div>
+      <button class="btn btn-red" style="width:100%;" id="race-go" onclick="goToRace()">▶ ENTRAR A PISTA</button>
 
-      <button class="btn btn-red" style="width:100%;" id="race-go" onclick="runRace()">▶ Iniciar carrera</button>
-
-      <div class="race-result" id="race-result">
-        <div class="result-title" id="result-title">—</div>
-        <div style="font-size:13px;color:var(--ash);margin-top:6px;" id="result-desc"></div>
-        <div style="font-family:var(--mono);font-size:1.3rem;margin-top:10px;" id="result-money"></div>
-      </div>
     </div>
   </div>
 </div>
@@ -564,12 +505,13 @@
 {% block extra_js %}
 <script>
 let budget = {{ user.budget }};
-let bet = 0, raceUsed = false, rival = null, mySpd = 0;
+let bet = 0, mySpd = 0, myBuildName = '', myBuild = null;
 const builds = {{ builds|tojson }};
 
-const RIVALS = [
-  {name:'Ghost_Drift',spd:72},{name:'Scuderia_AI',spd:78},{name:'VeloceBOT',spd:84},
-  {name:'RedLine_X',spd:88},{name:'Apex_Ghost',spd:93},{name:'Turbo_0',spd:68},{name:'Nitro_SYS',spd:80}
+const AI_RIVALS = [
+  {name: 'REDLINE',  hex: '#ff3333'},
+  {name: 'GHOST',    hex: '#00ccff'},
+  {name: 'APEX_AI',  hex: '#aa00ff'},
 ];
 
 const CHALLENGES = [
@@ -583,6 +525,7 @@ const CHALLENGES = [
 ];
 
 function fmtEur(n){return '€'+Math.round(n).toLocaleString('es-ES');}
+
 function updBudgets(){
   const f=fmtEur(budget);
   document.getElementById('budget-disp').textContent=f;
@@ -625,53 +568,46 @@ function claim(id,reward){
     .then(r=>r.json()).then(d=>{if(d.success){budget=d.new_budget;updBudgets();renderChallenges();}});
 }
 
-function openRace(id,name,spd){
-  raceUsed=false; bet=0; mySpd=spd;
+// ── RACE ──────────────────────────────────────────────
+
+function openRace(id, name, spd){
+  myBuildName = name; mySpd = spd;
+  myBuild = builds.find(b=>b.id===id) || {};
+
+  document.getElementById('my-name').textContent = name;
+  document.getElementById('my-spd').textContent = spd;
+  document.getElementById('rival-chips').innerHTML = AI_RIVALS.map(r =>
+    `<div class="rival-chip" style="border-color:${r.hex};color:${r.hex};">● ${r.name}</div>`
+  ).join('');
+
+  bet = 0;
   document.querySelectorAll('.bet-btn').forEach(b=>b.classList.remove('sel'));
-  document.getElementById('race-result').style.display='none';
-  document.getElementById('race-go').disabled=false;
-  document.getElementById('race-go').textContent='▶ Iniciar carrera';
-  rival=RIVALS[Math.floor(Math.random()*RIVALS.length)];
-  document.getElementById('my-name').textContent=name;
-  document.getElementById('my-spd').textContent=spd;
-  document.getElementById('rival-name').textContent=rival.name;
-  document.getElementById('rival-spd').textContent=rival.spd;
+  document.querySelector('.bet-btn[data-bet="0"]').classList.add('sel');
+
   document.getElementById('race-modal').classList.add('open');
 }
 
 function selBet(a,btn){
-  if(raceUsed)return;
   bet=a;
   document.querySelectorAll('.bet-btn').forEach(b=>b.classList.remove('sel'));
   btn.classList.add('sel');
 }
 
-function runRace(){
-  if(raceUsed)return;
-  if(!bet){alert('Selecciona una apuesta');return;}
-  if(bet>budget){alert('Presupuesto insuficiente');return;}
-  raceUsed=true;
-  const btn=document.getElementById('race-go');
-  btn.disabled=true;btn.textContent='⏳ Corriendo…';
-  setTimeout(()=>{
-    const myF=mySpd+(Math.random()*10-5);
-    const rvF=rival.spd+(Math.random()*10-5);
-    const won=myF>rvF;
-    const delta=won?bet:-bet;
-    fetch('/api/update-budget',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:delta})})
-      .then(r=>r.json()).then(d=>{
-        budget=d.new_budget; updBudgets();
-        const res=document.getElementById('race-result');
-        res.className='race-result '+(won?'win':'lose');
-        res.style.display='block';
-        document.getElementById('result-title').className='result-title '+(won?'win':'lose');
-        document.getElementById('result-title').textContent=won?'VICTORIA':'DERROTA';
-        document.getElementById('result-desc').textContent=`Tu score ${myF.toFixed(1)} ${won?'superó':'perdió contra'} ${rvF.toFixed(1)}`;
-        document.getElementById('result-money').textContent=(won?'+':'')+fmtEur(delta);
-        document.getElementById('result-money').style.color=won?'var(--green)':'var(--red)';
-        btn.textContent='✓ Finalizado';
-      });
-  },2000);
+function goToRace(){
+  if(bet>budget){alert('Presupuesto insuficiente para esa apuesta');return;}
+  const params = new URLSearchParams({
+    brand: myBuild.brand || '',
+    model: myBuild.model || '',
+    color: myBuild.color_hex || '',
+    spd:   mySpd,
+    name:  myBuildName,
+    bet:   bet
+  });
+  location.href = '/race-game?' + params.toString();
+}
+
+function closeRaceModal(){
+  document.getElementById('race-modal').classList.remove('open');
 }
 
 function closeMod(id){document.getElementById(id).classList.remove('open');}
