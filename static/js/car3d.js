@@ -114,16 +114,25 @@ const COLORS = [
 
 // Estado del visor
 let scene, camera, renderer;
+let composer = null, bloomPass = null;
 let currentModel = null;
 let bodyMeshes    = [];
 let caliperMeshes = [];
 let rimMeshes     = [];   // llantas — para cambiar color/estilo
+let interiorMeshes = [];  // tapicería — para cambiar color del interior
 let currentColorIdx = 0;
 let autoRotate = true;
 let loadedBrands = {};    // cache: brand → { model, normalizedFor }
 let rotY = 0.5, rotX = 0.15, dist = 8;
 let isDragging = false, lx = 0, ly = 0;
 let hintHidden = false;
+let currentFile = null;   // archivo .glb actual — usado por los presets de cámara (orientación)
+let studioLights = {};    // refs a luces de estudio — usado por el modo noche
+let nightMode = false;
+let carbonTexture = null; // textura de fibra de carbono, generada una sola vez
+let underglow = null;     // luz de neón bajo el coche
+let xrayMode = false;      // vista de rayos X — carrocería semitransparente
+const XRAY_OPACITY = 0.18;
 
 // Estilos de llantas: color y propiedades PBR
 const WHEEL_STYLES = {
@@ -134,13 +143,19 @@ const WHEEL_STYLES = {
   carbon_20:  { hex: 0x222222, metal: 0.28, rough: 0.42 },
 };
 
+// Acabado de tapicería: cuero/Nappa con sheen vs Alcántara mate/aterciopelada
+const DEFAULT_LEATHER_FINISH = { rough: 0.35, metal: 0.06 };
+const INTERIOR_FINISH = {
+  alcantara: { rough: 0.92, metal: 0.0 },
+};
+
 // ── INIT THREE.JS ─────────────────────────────────────────────
 function initThree(mountId) {
   const mount = document.getElementById(mountId);
   const W = mount.clientWidth;
   const H = mount.clientHeight;
 
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
   renderer.setSize(W, H);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
@@ -161,16 +176,35 @@ function initThree(mountId) {
 
   setupLights();
   setupEnvironment();
+  setupUnderglow();
   setupEnvMap();
+  setupComposer(W, H);
   setupOrbitControls(mount);
   setupResize(mount);
   animate();
 }
 
-function setupLights() {
-  scene.add(new THREE.AmbientLight(0xffffff, 0.85));  // alto para que colores metálicos sean visibles
+// Bloom de post-procesado: halo de luz real en faros/pilotos.
+// Degradado silencioso si las librerías de postprocessing no llegan a cargar (CDN).
+function setupComposer(W, H) {
+  try {
+    composer = new THREE.EffectComposer(renderer);
+    composer.addPass(new THREE.RenderPass(scene, camera));
+    bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(W, H), 0.45, 0.35, 0.92);
+    composer.addPass(bloomPass);
+    composer.renderTarget1.texture.encoding = THREE.sRGBEncoding;
+    composer.renderTarget2.texture.encoding = THREE.sRGBEncoding;
+  } catch (e) {
+    console.warn('Bloom no disponible:', e.message);
+    composer = null;
+  }
+}
 
-  const key = new THREE.DirectionalLight(0xfff8e8, 2.8);
+function setupLights() {
+  const ambient = new THREE.AmbientLight(0xffffff, 0.45);  // bajo para más contraste; el key light aporta el brillo principal
+  scene.add(ambient);
+
+  const key = new THREE.DirectionalLight(0xfff8e8, 3.2);
   key.position.set(6, 12, 7);
   key.castShadow = true;
   key.shadow.mapSize.width  = 2048;
@@ -192,23 +226,57 @@ function setupLights() {
   rim.position.set(0, 4, -10);
   scene.add(rim);
 
-  scene.add(new THREE.HemisphereLight(0x444444, 0x111111, 0.5));
+  const hemi = new THREE.HemisphereLight(0x444444, 0x111111, 0.30);
+  scene.add(hemi);
 
+  const spots = [];
   [-4, 4].forEach(x => {
     const spot = new THREE.SpotLight(0xffffff, 1.8, 22, Math.PI / 5.5, 0.35, 1);
     spot.position.set(x, 9, 2);
     spot.target.position.set(x * 0.25, 0, 0);
     scene.add(spot);
     scene.add(spot.target);
+    spots.push(spot);
   });
+
+  studioLights = { ambient, key, fill, rim, hemi, spots };
+  [ambient, key, fill, rim, hemi, ...spots].forEach(l => { l.userData.dayIntensity = l.intensity; });
+}
+
+// Modo noche / showroom: apaga la luz ambiental del estudio para que destaquen
+// los faros/pilotos (emissive + bloom) sobre un fondo casi negro.
+function setNightMode(on) {
+  nightMode = on;
+  const bg = on ? 0x000000 : 0x060606;
+  scene.background = new THREE.Color(bg);
+  if (scene.fog) {
+    scene.fog.color.setHex(bg);
+    scene.fog.density = on ? 0.045 : 0.030;
+  }
+
+  const factor = on ? 0.15 : 1.0;
+  const { ambient, key, fill, rim, hemi, spots } = studioLights;
+  [ambient, key, fill, rim, hemi, ...(spots || [])].forEach(l => {
+    if (l) l.intensity = l.userData.dayIntensity * factor;
+  });
+
+  renderer.toneMappingExposure = on ? 1.0 : 1.4;
+
+  if (bloomPass) {
+    bloomPass.strength = on ? 0.85 : 0.45;
+    bloomPass.threshold = on ? 0.65 : 0.92;
+  }
 }
 
 function setupEnvironment() {
-  const groundMat = new THREE.MeshStandardMaterial({
+  // Suelo de estudio pulido: clearcoat + envMap más intenso = reflejo tenue del coche
+  const groundMat = new THREE.MeshPhysicalMaterial({
     color: 0x070707,
-    metalness: 0.96,
-    roughness: 0.04,
-    envMapIntensity: 1.0,
+    metalness: 0.92,
+    roughness: 0.05,
+    envMapIntensity: 1.8,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.05,
   });
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), groundMat);
   ground.rotation.x = -Math.PI / 2;
@@ -225,6 +293,65 @@ function setupEnvironment() {
   line.rotation.x = -Math.PI / 2;
   line.position.y = 0.003;
   scene.add(line);
+
+  // Sombra de contacto bajo el coche — ancla el modelo al suelo
+  const aoCanvas = document.createElement('canvas');
+  aoCanvas.width = aoCanvas.height = 256;
+  const actx = aoCanvas.getContext('2d');
+  const grad = actx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  grad.addColorStop(0,   'rgba(0,0,0,0.55)');
+  grad.addColorStop(0.7, 'rgba(0,0,0,0.22)');
+  grad.addColorStop(1,   'rgba(0,0,0,0)');
+  actx.fillStyle = grad;
+  actx.fillRect(0, 0, 256, 256);
+  const aoMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(aoCanvas), transparent: true, depthWrite: false });
+  const aoBlob = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 5.6), aoMat);
+  aoBlob.rotation.x = -Math.PI / 2;
+  aoBlob.position.y = 0.0015;
+  scene.add(aoBlob);
+}
+
+// Luz de neón bajo el coche: disco emisivo (additive) + luz puntual coloreada
+// que se refleja en el suelo de estudio. Oculto por defecto, se activa con toggle.
+function setupUnderglow() {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createRadialGradient(128, 128, 20, 128, 128, 128);
+  grad.addColorStop(0,   'rgba(255,255,255,1)');
+  grad.addColorStop(0.35,'rgba(255,255,255,0.45)');
+  grad.addColorStop(1,   'rgba(255,255,255,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 256);
+  const tex = new THREE.CanvasTexture(canvas);
+
+  const mat = new THREE.MeshBasicMaterial({
+    map: tex, color: 0x00e5ff, transparent: true,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 5.6), mat);
+  glow.rotation.x = -Math.PI / 2;
+  glow.position.y = 0.012;
+  glow.visible = false;
+  scene.add(glow);
+
+  const light = new THREE.PointLight(0x00e5ff, 0, 6, 2);
+  light.position.set(0, 0.25, 0);
+  scene.add(light);
+
+  underglow = { mesh: glow, mat, light };
+}
+
+// on: boolean — activa/desactiva el neón. hex: color (opcional, p.ej. el acento de marca)
+function setUnderglow(on, hex) {
+  if (!underglow) return;
+  if (hex) {
+    const c = new THREE.Color(hex);
+    underglow.mat.color.copy(c);
+    underglow.light.color.copy(c);
+  }
+  underglow.mesh.visible = on;
+  underglow.light.intensity = on ? 2.4 : 0;
 }
 
 function setupEnvMap() {
@@ -291,6 +418,30 @@ function updateCamera() {
   camera.lookAt(0, 0.9, 0);
 }
 
+// Archivos cuyo morro apunta a -Z en su orientación nativa (resto → +Z).
+// Mismo dato que RACE_YAW en race_game.html: solo ferrari.glb está invertido.
+const NOSE_FLIP = { 'ferrari.glb': true };
+
+// Vistas de cámara predefinidas: frontal/lateral/trasera/3-4.
+// rotY=0 → cámara en +Z, ve la cara +Z del modelo (el morro, en los modelos no invertidos).
+const CAMERA_PRESETS = {
+  front:  { rotY: 0,         rotX: 0.12, dist: 6.2 },
+  rear:   { rotY: Math.PI,   rotX: 0.12, dist: 6.2 },
+  side:   { rotY: Math.PI/2, rotX: 0.08, dist: 8.5 },
+  threeq: { rotY: 0.5,       rotX: 0.15, dist: 8   },
+};
+
+function setCameraView(view) {
+  const p = CAMERA_PRESETS[view] || CAMERA_PRESETS.threeq;
+  const flip = (currentFile && NOSE_FLIP[currentFile]) ? Math.PI : 0;
+  autoRotate = false;
+  hideHint();
+  rotY = p.rotY + flip;
+  rotX = p.rotX;
+  dist = p.dist;
+  updateCamera();
+}
+
 function setupResize(container) {
   const ro = new ResizeObserver(() => {
     const W = container.clientWidth;
@@ -298,6 +449,7 @@ function setupResize(container) {
     renderer.setSize(W, H);
     camera.aspect = W / H;
     camera.updateProjectionMatrix();
+    if (composer) composer.setSize(W, H);
   });
   ro.observe(container);
 }
@@ -305,7 +457,9 @@ function setupResize(container) {
 function animate() {
   requestAnimationFrame(animate);
   if (autoRotate) { rotY += 0.003; updateCamera(); }
-  renderer.render(scene, camera);
+  // Ruedas girando al ralentí — ambiente de showroom (solo modelos GLB reales)
+  if (currentFile) rimMeshes.forEach(m => { if (m.userData.canSpin) m.rotation.x += 0.012; });
+  if (composer) composer.render(); else renderer.render(scene, camera);
 }
 
 // ── CARGA DE MODELO ───────────────────────────────────────────
@@ -356,6 +510,14 @@ function loadModel(brand, model, onProgress, onDone) {
   );
 }
 
+// Una malla solo puede girar de forma segura en el render si su pivote (origen local)
+// está cerca del centro de su geometría — si no, rotar la orbita lejos de su sitio.
+function markSpinSafety(mesh) {
+  mesh.geometry.computeBoundingBox();
+  const center = mesh.geometry.boundingBox.getCenter(new THREE.Vector3());
+  mesh.userData.canSpin = center.length() < 0.1;
+}
+
 function normalizeModel(model, brand, cfgOverride) {
   const box  = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
@@ -371,25 +533,35 @@ function normalizeModel(model, brand, cfgOverride) {
   bodyMeshes    = [];
   caliperMeshes = [];
   rimMeshes     = [];
+  interiorMeshes = [];
   const cfg = cfgOverride || MODEL_MAP[brand] || {};
+  currentFile = cfg.file || null;
 
   // ── Materiales ─────────────────────────────────────────────
   const col  = COLORS[currentColorIdx];
   const _pm  = paintMetal(col.metal);
   const _pr  = col.finish === 'Matte' ? col.rough : Math.max(col.rough, 0.16);
-  const mkPaint = () => new THREE.MeshStandardMaterial({
+  // Mate/Satinado no "brillan" con luz propia → más contraste de sombras;
+  // Gloss/Metallic/Pearl mantienen un leve resplandor que realza el color
+  const _ei  = (col.finish === 'Matte' || col.finish === 'Satin') ? 0.04 : 0.18;
+  const _cc  = clearcoatForFinish(col.finish);
+  const mkPaint = () => new THREE.MeshPhysicalMaterial({
     color: new THREE.Color(col.hex), metalness: _pm, roughness: _pr,
     envMapIntensity: 2.0,
-    emissive: new THREE.Color(col.hex), emissiveIntensity: 0.18,
+    emissive: new THREE.Color(col.hex), emissiveIntensity: _ei,
+    clearcoat: _cc.cc, clearcoatRoughness: _cc.ccr,
+    transparent: xrayMode, opacity: xrayMode ? XRAY_OPACITY : 1.0, depthWrite: !xrayMode,
   });
-  const glbGlass   = new THREE.MeshPhysicalMaterial({ color:0x9ab0c8, metalness:0.05, roughness:0.02, transparent:true, opacity:0.22 });
+  const glbGlass   = new THREE.MeshPhysicalMaterial({ color:0x10181f, metalness:0.2, roughness:0.05, transparent:true, opacity:0.55, envMapIntensity:1.6 });
   const glbTire    = new THREE.MeshStandardMaterial({ color:0x080808, metalness:0.0,  roughness:0.97 });
   const glbRimMat  = new THREE.MeshStandardMaterial({ color:0xbbbbbb, metalness:0.96, roughness:0.06, envMapIntensity:1.8 });
-  const glbLight   = new THREE.MeshStandardMaterial({ color:0xffffff, emissive:new THREE.Color(0xffffcc), emissiveIntensity:1.0 });
-  const glbLightR  = new THREE.MeshStandardMaterial({ color:0xff2200, emissive:new THREE.Color(0xff2200), emissiveIntensity:1.4 });
-  const glbDark    = new THREE.MeshStandardMaterial({ color:0x101010, metalness:0.25, roughness:0.80 });
+  const glbLight   = new THREE.MeshStandardMaterial({ color:0xffffff, emissive:new THREE.Color(0xffffcc), emissiveIntensity:1.8 });
+  const glbLightR  = new THREE.MeshStandardMaterial({ color:0xff2200, emissive:new THREE.Color(0xff2200), emissiveIntensity:2.2 });
+  const glbDark    = new THREE.MeshStandardMaterial({ color:0x101010, metalness:DEFAULT_LEATHER_FINISH.metal, roughness:DEFAULT_LEATHER_FINISH.rough });
   const glbChrome  = new THREE.MeshStandardMaterial({ color:0xcccccc, metalness:0.99, roughness:0.03, envMapIntensity:2.0 });
   const glbCaliper = new THREE.MeshStandardMaterial({ color:0xcc0000, metalness:0.65, roughness:0.32 });
+  const glbCarbon  = new THREE.MeshPhysicalMaterial({ color:0xffffff, map:getCarbonTexture(), metalness:0.45, roughness:0.28, clearcoat:0.7, clearcoatRoughness:0.18, envMapIntensity:1.6 });
+  const glbMirror  = new THREE.MeshStandardMaterial({ color:0xeef2f5, metalness:1.0, roughness:0.04, envMapIntensity:2.4 });
 
   // ── Pre-scan: max vértices para umbral de carrocería ────────
   let maxVerts = 0;
@@ -425,9 +597,11 @@ function normalizeModel(model, brand, cfgOverride) {
     }
     if (n.includes('rim') || n.includes('spoke') || n.includes('hub') || n.includes('alloy') ||
         (n.includes('wheel') && !n.includes('tire') && !n.includes('tyre'))) {
-      child.material = glbRimMat.clone(); rimMeshes.push(child); return;
+      child.material = glbRimMat.clone();
+      markSpinSafety(child);
+      rimMeshes.push(child); return;
     }
-    if (n.includes('headlight') || n.includes('drl') || n.includes('led') ||
+    if (n.includes('headlight') || n.includes('drl') || n.includes('_led') ||
         (n.includes('light') && (n.includes('head') || n.includes('front') || n.includes('_fl') || n.includes('_fr')))) {
       child.material = glbLight; return;
     }
@@ -440,11 +614,14 @@ function normalizeModel(model, brand, cfgOverride) {
     }
     if (n.includes('interior') || n.includes('leather') || n.includes('seat') || n.includes('carpet') ||
         n.includes('cabin') || n.includes('cockpit') || n.includes('dashboard')) {
-      child.material = glbDark; return;
+      child.material = glbDark.clone(); interiorMeshes.push(child); return;
     }
-    if (n.includes('chrome') || n.includes('exhaust') || n.includes('trim_metal') || n.includes('grille') || n.includes('grill')) {
+    if (n.includes('chrome') || n.includes('exhaust') || n.includes('trim_metal') || n.includes('grille') || n.includes('grill') ||
+        n.includes('badge') || n.includes('emblem') || n.includes('orange')) {
       child.material = glbChrome; return;
     }
+    if (n.includes('mirror')) { child.material = glbMirror; return; }
+    if (n.includes('carbon')) { child.material = glbCarbon; return; }
 
     // 3. Para meshes sin nombre específico: usar umbral de tamaño
     //    Los paneles de carrocería exterior suelen ser los meshes más grandes
@@ -514,6 +691,44 @@ function swapModel(model, brand) {
 // El color real necesita metalness ≤ 0.45 para ser legible con luces puntuales
 function paintMetal(rawMetal) { return Math.min(rawMetal, 0.45); }
 
+// Barniz (clearcoat): doble reflejo típico de pintura de coche real.
+// Gloss/Metallic/Pearl llevan capa de barniz brillante; Satin un leve brillo; Matte ninguno.
+function clearcoatForFinish(finish) {
+  switch (finish) {
+    case 'Matte': return { cc: 0.0,  ccr: 0.6 };
+    case 'Satin': return { cc: 0.25, ccr: 0.3 };
+    case 'Pearl': return { cc: 1.0,  ccr: 0.02 };
+    default:      return { cc: 1.0,  ccr: 0.04 }; // Gloss / Metallic
+  }
+}
+
+// Fibra de carbono: textura tejida procedural (patrón 2x2), generada una vez y reutilizada.
+function makeCarbonTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 32;
+  const ctx = c.getContext('2d');
+  const tile = 4;
+  for (let y = 0; y < 32; y += tile) {
+    for (let x = 0; x < 32; x += tile) {
+      const odd = ((x / tile) + (y / tile)) % 2 === 0;
+      ctx.fillStyle = odd ? '#1e1e1e' : '#0c0c0c';
+      ctx.fillRect(x, y, tile, tile);
+      ctx.fillStyle = odd ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.02)';
+      ctx.fillRect(x, y, tile, tile / 2);
+    }
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(10, 10);
+  tex.encoding = THREE.sRGBEncoding;
+  return tex;
+}
+
+function getCarbonTexture() {
+  if (!carbonTexture) carbonTexture = makeCarbonTexture();
+  return carbonTexture;
+}
+
 function applyColor(idx) {
   currentColorIdx = idx;
   const col   = COLORS[idx];
@@ -521,6 +736,9 @@ function applyColor(idx) {
   const metal = paintMetal(col.metal);
   // Colores mate/satin con metalness bajo ya se ven bien; gloss/metallic cap a 0.45
   const rough = col.finish === 'Matte' ? col.rough : Math.max(col.rough, 0.14);
+  // Mate/Satinado sin resplandor propio → más contraste de sombras y relieve
+  const ei = (col.finish === 'Matte' || col.finish === 'Satin') ? 0.04 : 0.18;
+  const cc = clearcoatForFinish(col.finish);
 
   bodyMeshes.forEach(mesh => {
     if (!mesh.isMesh) return;
@@ -533,16 +751,28 @@ function applyColor(idx) {
         mat.envMapIntensity = 2.0;
         if (!mat.emissive) mat.emissive = new THREE.Color(0);
         mat.emissive.set(color);
-        mat.emissiveIntensity = 0.18;
+        mat.emissiveIntensity = ei;
+        if ('clearcoat' in mat) { mat.clearcoat = cc.cc; mat.clearcoatRoughness = cc.ccr; }
+        mat.transparent = xrayMode;
+        mat.opacity = xrayMode ? XRAY_OPACITY : 1.0;
+        mat.depthWrite = !xrayMode;
         mat.needsUpdate = true;
       } else {
-        mesh.material = new THREE.MeshStandardMaterial({
+        mesh.material = new THREE.MeshPhysicalMaterial({
           color, metalness: metal, roughness: rough, envMapIntensity: 2.0,
-          emissive: new THREE.Color(col.hex), emissiveIntensity: 0.18,
+          emissive: new THREE.Color(col.hex), emissiveIntensity: ei,
+          clearcoat: cc.cc, clearcoatRoughness: cc.ccr,
+          transparent: xrayMode, opacity: xrayMode ? XRAY_OPACITY : 1.0, depthWrite: !xrayMode,
         });
       }
     });
   });
+}
+
+// Vista de rayos X: carrocería semitransparente para revelar chasis/interior ("blueprint").
+function setXrayMode(on) {
+  xrayMode = on;
+  applyColor(currentColorIdx);
 }
 
 // ── CALIPER COLOR ─────────────────────────────────────────────
@@ -553,6 +783,19 @@ function applyCaliperColor(hex) {
     mesh.material.color.set(color);
     mesh.material.emissive?.set(color);
     mesh.material.emissiveIntensity = 0.15;
+    mesh.material.needsUpdate = true;
+  });
+}
+
+// ── INTERIOR COLOR ─────────────────────────────────────────────
+function applyInteriorColor(hex, interiorId) {
+  const color = new THREE.Color(hex);
+  const finish = INTERIOR_FINISH[interiorId] || DEFAULT_LEATHER_FINISH;
+  interiorMeshes.forEach(mesh => {
+    if (!mesh.isMesh) return;
+    mesh.material.color.set(color);
+    mesh.material.roughness = finish.rough;
+    mesh.material.metalness = finish.metal;
     mesh.material.needsUpdate = true;
   });
 }
@@ -576,6 +819,8 @@ function buildFallback(brand) {
   bodyMeshes    = [];
   caliperMeshes = [];
   rimMeshes     = [];
+  interiorMeshes = [];
+  currentFile = null;
 
   // Perfiles por marca: hd=hood ratio, bh=belt height, nh=nose height,
   // rh=rear deck height, rfS=roof slope (fastback factor), wing, wf=wide fenders
@@ -598,8 +843,10 @@ function buildFallback(brand) {
   const L = p.l, W = p.w, H = p.h;
 
   // ── Materiales ──────────────────────────────────────────────
-  const bodyMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(col.hex), metalness: col.metal, roughness: col.rough, envMapIntensity: 1.9
+  const _cc = clearcoatForFinish(col.finish);
+  const bodyMat = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color(col.hex), metalness: col.metal, roughness: col.rough, envMapIntensity: 1.9,
+    clearcoat: _cc.cc, clearcoatRoughness: _cc.ccr,
   });
   const glassMat = new THREE.MeshStandardMaterial({
     color: 0x88aacc, metalness: 0.1, roughness: 0.04, transparent: true, opacity: 0.25
@@ -609,10 +856,10 @@ function buildFallback(brand) {
   const tire     = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.96 });
   const rimMat   = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.96, roughness: 0.05 });
   const caliperMat = new THREE.MeshStandardMaterial({ color: 0xcc0000, metalness: 0.7, roughness: 0.3 });
-  const lightF   = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffcc, emissiveIntensity: 0.9 });
-  const lightR   = new THREE.MeshStandardMaterial({ color: 0xff2200, emissive: 0xff2200, emissiveIntensity: 1.3 });
-  const drlMat   = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 3.5 });
-  const lbarMat  = new THREE.MeshStandardMaterial({ color: 0xff2200, emissive: 0xff2200, emissiveIntensity: 2.2 });
+  const lightF   = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffcc, emissiveIntensity: 1.6 });
+  const lightR   = new THREE.MeshStandardMaterial({ color: 0xff2200, emissive: 0xff2200, emissiveIntensity: 2.0 });
+  const drlMat   = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 4.5 });
+  const lbarMat  = new THREE.MeshStandardMaterial({ color: 0xff2200, emissive: 0xff2200, emissiveIntensity: 3.0 });
 
   function add(geo, mat, x, y, z, rx, ry, rz) {
     const m = new THREE.Mesh(geo, mat);
@@ -831,4 +1078,13 @@ function showLoadingState(visible) {
   if (el) el.style.display = visible ? 'flex' : 'none';
 }
 
-window.Car3D = { initThree, loadModel, applyColor, applyCaliperColor, applyWheels, buildFallback, COLORS, MODEL_MAP, WHEEL_STYLES };
+// Captura el frame actual del visor y dispara la descarga como PNG.
+function captureImage(filename) {
+  if (composer) composer.render(); else renderer.render(scene, camera);
+  const link = document.createElement('a');
+  link.download = (filename || 'apex-build') + '.png';
+  link.href = renderer.domElement.toDataURL('image/png');
+  link.click();
+}
+
+window.Car3D = { initThree, loadModel, applyColor, applyCaliperColor, applyWheels, applyInteriorColor, buildFallback, setNightMode, setCameraView, setUnderglow, setXrayMode, captureImage, COLORS, MODEL_MAP, WHEEL_STYLES };

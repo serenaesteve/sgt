@@ -32,9 +32,16 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Co
 /* SCREENS */
 .screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50}
 #s-menu{background:#000}
-#s-menu.off,#s-cd.off,#s-result.off{display:none}
+#s-menu.off,#s-cd.off,#s-result.off,#s-loading.off{display:none}
 #s-cd{background:transparent;pointer-events:none;z-index:60}
 #s-result{background:rgba(0,0,0,.93)}
+#s-loading{background:#000}
+
+/* Loading */
+.load-logo{font-size:38px;font-weight:900;letter-spacing:10px;color:#fff;text-shadow:0 0 30px rgba(255,0,85,.5);margin-bottom:36px}
+.load-track{width:340px;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+.load-fill{height:100%;width:0%;background:#ff0055;box-shadow:0 0 12px #ff0055;transition:width .2s}
+.load-pct{font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.4);margin-top:14px}
 
 /* Menu */
 .m-logo{font-size:76px;font-weight:900;letter-spacing:12px;color:#fff;text-shadow:0 0 40px rgba(255,0,85,.55);margin-bottom:4px}
@@ -104,6 +111,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Co
 <!-- COUNTDOWN -->
 <div class="screen off" id="s-cd"><div id="cdn"></div></div>
 
+<!-- LOADING -->
+<div class="screen off" id="s-loading">
+  <div class="load-logo">APEX RACE</div>
+  <div class="load-track"><div class="load-fill" id="load-fill"></div></div>
+  <div class="load-pct" id="load-pct">CARGANDO COCHES... 0%</div>
+</div>
+
 <!-- RESULT -->
 <div class="screen off" id="s-result">
   <div id="rpos" class="g">P1</div>
@@ -129,6 +143,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Co
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 // ═══════════════════════════════════════════════════
 // RENDERER
@@ -440,10 +456,265 @@ const STOCK_BUILDS = [
   { name:'McLaren W1',    hex:'#FF6600', col:0xFF6600, spd:9.0, hdl:8.0, bst:9.0 },
 ];
 const AI_BUILDS = [
-  { name:'REDLINE', hex:'#ff3333', col:0xff3333, spd:8.0, hdl:7.5, bst:8.0 },
-  { name:'GHOST',   hex:'#00ccff', col:0x00ccff, spd:7.8, hdl:8.5, bst:7.5 },
-  { name:'APEX_AI', hex:'#aa00ff', col:0xaa00ff, spd:8.2, hdl:9.0, bst:7.8 },
+  { name:'REDLINE', hex:'#ff3333', col:0xff3333, spd:8.0, hdl:7.5, bst:8.0, brand:'Ferrari', model:'' },
+  { name:'GHOST',   hex:'#00ccff', col:0x00ccff, spd:7.8, hdl:8.5, bst:7.5, brand:'Ford',    model:'' },
+  { name:'APEX_AI', hex:'#aa00ff', col:0xaa00ff, spd:8.2, hdl:9.0, bst:7.8, brand:'Audi',    model:'' },
 ];
+
+// ═══════════════════════════════════════════════════
+// 3D MODELS — GLB cargados del configurador
+// ═══════════════════════════════════════════════════
+// MODEL_MAP: claves 'Marca' (default) y 'Marca::Modelo' (específico)
+const MODEL_MAP = {
+  'Ferrari':                 { file:'ferrari.glb',     bodyMesh:['body'] },
+  'Ferrari::296 GTB':        { file:'ferrari_488.glb', bodyMesh:['main_color_paint','main_paint'] },
+  'Ferrari::Roma':           { file:'ferrari_488.glb', bodyMesh:['main_color_paint','main_paint'] },
+  'Ferrari::SF90 Stradale':  { file:'ferrari_f8.glb',  bodyMesh:['body:paint_geo','paint_geo','kit3_paint'] },
+  'Ferrari::F80':            { file:'ferrari_f8.glb',  bodyMesh:['body:paint_geo','paint_geo','kit3_paint'] },
+
+  'Lamborghini':                    { file:'lamborghini.glb', bodyMesh:['body:kit3_paint','kit3_paint','kit3_coloured'] },
+  'Lamborghini::Revuelto':          { file:'aventador.glb',   bodyMesh:['coloured_geo','coloured'] },
+
+  'Porsche':                    { file:'porsche.glb',   bodyMesh:[], largestMesh:true },
+  'Porsche::Cayman GT4 RS':     { file:'cayman.glb',    bodyMesh:['cayman','car_porsche','lod0m'] },
+  'Porsche::Panamera Turbo S':  { file:'panamera.glb',  bodyMesh:['coloured_geo','coloured'] },
+
+  'McLaren':       { file:'mclaren.glb',    bodyMesh:['s:paint_geo','s:paint','paint_geo'] },
+  'Aston Martin':  { file:'astonmartin.glb', bodyMesh:[], largestMesh:true },
+  'Bugatti':       { file:'bugatti.glb',    bodyMesh:[], largestMesh:true },
+  'Maserati':      { file:'maserati.glb',   bodyMesh:[], largestMesh:true },
+  'Ford':          { file:'mustang.glb',    bodyMesh:['carpaint','body','paint'] },
+  'Nissan':        { file:'gtr.glb',        bodyMesh:[], largestMesh:true },
+  'Audi':          { file:'r8.glb',         bodyMesh:[], largestMesh:true },
+};
+
+// Estilos de llantas: color y propiedades PBR (igual que car3d.js)
+const WHEEL_STYLES = {
+  serie:      { hex: 0xaaaaaa, metal: 0.92, rough: 0.10 },
+  sport_20:   { hex: 0x888888, metal: 0.90, rough: 0.14 },
+  forged_21:  { hex: 0xcccccc, metal: 0.97, rough: 0.04 },
+  diamond_21: { hex: 0xe8e8e8, metal: 1.00, rough: 0.02 },
+  carbon_20:  { hex: 0x222222, metal: 0.28, rough: 0.42 },
+};
+
+// Corrección de orientación por archivo: rotación Y (rad) para que el morro
+// del modelo apunte a +Z local (convención de movimiento del juego)
+const RACE_YAW = {
+  'ferrari.glb':     Math.PI,
+  'ferrari_488.glb': 0,
+  'ferrari_f8.glb':  0,
+  'lamborghini.glb': 0,
+  'aventador.glb':   0,
+  'porsche.glb':     0,
+  'cayman.glb':      0,
+  'panamera.glb':    0,
+  'mclaren.glb':     0,
+  'astonmartin.glb': 0,
+  'bugatti.glb':     0,
+  'maserati.glb':    0,
+  'mustang.glb':     0,
+  'gtr.glb':         0,
+  'r8.glb':          0,
+};
+
+// Caché de escenas GLTF crudas por archivo (varios coches pueden compartir un modelo)
+const gltfCache = {};
+
+// ── Carga del modelo GLB para un coche de carrera ──────────────
+async function loadCarModel(brand, model, colorHex, caliperHex, wheelId, onProgress) {
+  const modelKey = model ? (brand + '::' + model) : brand;
+  const cfg = MODEL_MAP[modelKey] || MODEL_MAP[brand];
+  if (!cfg) return null;
+
+  let rawScene = gltfCache[cfg.file];
+  if (!rawScene) {
+    const dracoLoader = new THREE.DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+    const loader = new THREE.GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
+    rawScene = await new Promise((resolve, reject) => {
+      loader.load(
+        `/static/models/${cfg.file}`,
+        gltf => resolve(gltf.scene),
+        xhr => { if (onProgress && xhr.total) onProgress(xhr.loaded / xhr.total); },
+        err => reject(err)
+      );
+    });
+    gltfCache[cfg.file] = rawScene;
+  }
+
+  const inst = instantiateCarModel(rawScene, cfg, colorHex, caliperHex, wheelId);
+  inst.file = cfg.file;
+  return inst;
+}
+
+// ── Clona + normaliza + materializa una escena GLB cruda (puerto de car3d.js normalizeModel) ──
+function instantiateCarModel(rawScene, cfg, colorHex, caliperHex, wheelId) {
+  const model = rawScene.clone(true);
+
+  // Escalado/centrado (car3d.js normalizeModel)
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const scale = 4.5 / Math.max(size.x, size.z);
+  model.scale.setScalar(scale);
+  box.setFromObject(model);
+  box.getCenter(center);
+  model.position.x = -center.x;
+  model.position.y = -box.min.y;
+  model.position.z = -center.z;
+
+  const bodyMeshes = [];
+  const caliperMeshes = [];
+  const rimMeshes = [];
+  const rearLightMeshes = [];
+
+  const bodyColor = new THREE.Color(colorHex);
+  const mkPaint = () => new THREE.MeshStandardMaterial({
+    color: bodyColor.clone(), metalness: 0.45, roughness: 0.20,
+    envMapIntensity: 1.6,
+    emissive: bodyColor.clone(), emissiveIntensity: 0.15,
+  });
+  const glbGlass   = new THREE.MeshPhysicalMaterial({ color:0x10181f, metalness:0.2, roughness:0.05, transparent:true, opacity:0.55, envMapIntensity:1.6 });
+  const glbTire    = new THREE.MeshStandardMaterial({ color:0x080808, metalness:0.0,  roughness:0.97 });
+  const glbRimMat  = new THREE.MeshStandardMaterial({ color:0xbbbbbb, metalness:0.96, roughness:0.06, envMapIntensity:1.8 });
+  const glbLight   = new THREE.MeshStandardMaterial({ color:0xffffff, emissive:new THREE.Color(0xffffcc), emissiveIntensity:1.8 });
+  const glbDark    = new THREE.MeshStandardMaterial({ color:0x101010, metalness:0.25, roughness:0.80 });
+  const glbChrome  = new THREE.MeshStandardMaterial({ color:0xcccccc, metalness:0.99, roughness:0.03, envMapIntensity:2.0 });
+  const glbCaliper = new THREE.MeshStandardMaterial({ color:0xcc0000, metalness:0.65, roughness:0.32 });
+
+  // Pre-scan: max vértices para umbral de carrocería
+  let maxVerts = 0;
+  model.traverse(c => {
+    if (c.isMesh && c.geometry?.attributes?.position)
+      maxVerts = Math.max(maxVerts, c.geometry.attributes.position.count);
+  });
+  const bodyThreshold = maxVerts * 0.14;
+
+  model.traverse(child => {
+    if (!child.isMesh) return;
+    child.castShadow = true;
+    child.receiveShadow = true;
+
+    const n = child.name.toLowerCase();
+    const verts = child.geometry?.attributes?.position?.count || 0;
+
+    const isNamedBody = cfg.bodyMesh.length > 0 && cfg.bodyMesh.some(k => n.includes(k.toLowerCase()));
+    if (isNamedBody) {
+      child.material = mkPaint();
+      bodyMeshes.push(child);
+      return;
+    }
+
+    if (n.includes('glass') || n.includes('windscreen') || n.includes('window') || n.includes('windshield') || n.includes('crystal')) {
+      child.material = glbGlass.clone(); return;
+    }
+    if (n.includes('tyre') || n.includes('tire') || n.includes('rubber') || n === 'wheel') {
+      child.material = glbTire.clone(); return;
+    }
+    if (n.includes('rim') || n.includes('spoke') || n.includes('hub') || n.includes('alloy') ||
+        (n.includes('wheel') && !n.includes('tire') && !n.includes('tyre'))) {
+      child.material = glbRimMat.clone(); rimMeshes.push(child); return;
+    }
+    if (n.includes('headlight') || n.includes('drl') || n.includes('led') ||
+        (n.includes('light') && (n.includes('head') || n.includes('front') || n.includes('_fl') || n.includes('_fr')))) {
+      child.material = glbLight.clone(); return;
+    }
+    if (n.includes('taillight') || n.includes('lights_red') || n.includes('stop_light') ||
+        (n.includes('light') && (n.includes('tail') || n.includes('rear') || n.includes('red') || n.includes('_rl') || n.includes('_rr')))) {
+      child.material = new THREE.MeshStandardMaterial({ color:0xff2200, emissive:new THREE.Color(0xff2200), emissiveIntensity:2.0 });
+      rearLightMeshes.push(child);
+      return;
+    }
+    if (n.includes('caliper') || n.includes('brake') || n.includes('clamp')) {
+      child.material = glbCaliper.clone(); caliperMeshes.push(child); return;
+    }
+    if (n.includes('interior') || n.includes('leather') || n.includes('seat') || n.includes('carpet') ||
+        n.includes('cabin') || n.includes('cockpit') || n.includes('dashboard')) {
+      child.material = glbDark.clone(); return;
+    }
+    if (n.includes('chrome') || n.includes('exhaust') || n.includes('trim_metal') || n.includes('grille') || n.includes('grill') ||
+        n.includes('badge') || n.includes('emblem') || n.includes('orange')) {
+      child.material = glbChrome.clone(); return;
+    }
+
+    // Sin nombre específico: umbral de tamaño
+    if (verts >= bodyThreshold) {
+      const wb = new THREE.Box3().setFromObject(child);
+      const ws = wb.getSize(new THREE.Vector3());
+      const dims = [ws.x, ws.y, ws.z].sort((a, b) => a - b);
+      const isRound = dims[2] > 0.01 &&
+                      (dims[1] / dims[2]) > 0.65 &&
+                      (dims[0] / dims[2]) < 0.55;
+      if (isRound) {
+        child.material = glbTire.clone();
+      } else {
+        child.material = mkPaint();
+        bodyMeshes.push(child);
+      }
+    } else {
+      const origMat = Array.isArray(child.material) ? child.material[0] : child.material;
+      if (!origMat) return;
+      child.material = origMat.clone();
+      if (child.material.transparent && child.material.opacity < 0.55) { child.material = glbGlass.clone(); return; }
+      if (child.material.color) {
+        const hsl = { h:0, s:0, l:0 };
+        child.material.color.getHSL(hsl);
+        if (hsl.s > 0.35 && hsl.l > 0.14) child.material.color.setHSL(hsl.h, 0.06, 0.10);
+      }
+      if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) {
+        child.material.envMapIntensity = 1.2;
+        if (child.material.metalness > 0.65) child.material.metalness = 0.65;
+        if (child.material.roughness < 0.18) child.material.roughness = 0.18;
+        child.material.needsUpdate = true;
+      }
+    }
+  });
+
+  // Seguridad: si bodyMeshes sigue vacío, usar el mayor mesh
+  if (bodyMeshes.length === 0) {
+    let top = null, topV = 0;
+    model.traverse(c => {
+      if (!c.isMesh || !c.geometry?.attributes?.position) return;
+      const v = c.geometry.attributes.position.count;
+      if (v > topV) { topV = v; top = c; }
+    });
+    if (top) { top.material = mkPaint(); bodyMeshes.push(top); }
+  }
+
+  // Color de pinzas de freno
+  if (caliperHex) {
+    const cc = new THREE.Color(caliperHex);
+    caliperMeshes.forEach(mesh => {
+      mesh.material.color.set(cc);
+      mesh.material.emissive?.set(cc);
+      mesh.material.emissiveIntensity = 0.15;
+      mesh.material.needsUpdate = true;
+    });
+  }
+
+  // Estilo de llantas
+  const ws = WHEEL_STYLES[wheelId] || WHEEL_STYLES['serie'];
+  const wheelColor = new THREE.Color(ws.hex);
+  rimMeshes.forEach(mesh => {
+    mesh.material.color.set(wheelColor);
+    mesh.material.metalness = ws.metal;
+    mesh.material.roughness = ws.rough;
+    mesh.material.needsUpdate = true;
+  });
+
+  return { model, bodyMeshes, caliperMeshes, rimMeshes, rearLightMeshes };
+}
+
+// ── Llama de boost procedural, colocada en la cara -Z del grupo GLB ya rotado ──
+function buildFlameMesh(glbGroup) {
+  const box = new THREE.Box3().setFromObject(glbGroup);
+  const fMat = new THREE.MeshBasicMaterial({ color: 0xff8800, transparent: true, opacity: 0 });
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.1, 6), fMat);
+  flame.position.set((box.min.x + box.max.x) / 2, (box.min.y + box.max.y) / 2, box.min.z - 0.3);
+  flame.rotation.x = Math.PI / 2;
+  return flame;
+}
 
 let selBuild = null; // set from URL or menu
 let garageBuild = null; // if came from garaje
@@ -498,11 +769,11 @@ class RaceCar {
     this.isPlayer = isPlayer;
 
     // physics params — tuned for fun arcade feel
-    this.topSpeed    = build.spd * 6.8;      // units/s
-    this.accelForce  = build.spd * 3.2;
-    this.brakeForce  = build.spd * 2.2;
+    this.topSpeed    = build.spd * 10.5;     // units/s
+    this.accelForce  = build.spd * 5.2;
+    this.brakeForce  = build.spd * 3.4;
     this.turnSpeed   = build.hdl * 0.028;    // rad/s per speed unit
-    this.boostPow    = build.bst * 0.6;
+    this.boostPow    = build.bst * 1.05;
     this.drag        = 0.97;
     this.handling    = build.hdl;
 
@@ -555,6 +826,33 @@ class RaceCar {
     this.mesh.rotation.y = this.yaw;
   }
 
+  // Carga el modelo 3D real (.glb) y reemplaza el placeholder procedural
+  async loadVisual(build) {
+    try {
+      const inst = await loadCarModel(build.brand, build.model || '', build.hex, build.caliperHex, build.wheelId, build.onProgress);
+      if (!inst) return; // sin modelo para esta marca → mantener placeholder procedural
+
+      const glbGroup = new THREE.Group();
+      glbGroup.add(inst.model);
+      glbGroup.rotation.y = RACE_YAW[inst.file] || 0;
+
+      const group = new THREE.Group();
+      group.add(glbGroup);
+      const flame = buildFlameMesh(glbGroup);
+      group.add(flame);
+      group.userData.glbGroup = glbGroup;
+      group.userData.rearLightMeshes = inst.rearLightMeshes;
+      group.userData.flame = flame;
+
+      scene.remove(this.mesh);
+      this.mesh = group;
+      scene.add(this.mesh);
+      this._syncPos();
+    } catch (e) {
+      console.warn('No se pudo cargar el modelo 3D para', build.name, e);
+    }
+  }
+
   // Recompute pct/lineOffset from world position (after a collision shove)
   _resyncOffset() {
     this.pct = this._findClosestT(this.pos, this.pct);
@@ -573,9 +871,14 @@ class RaceCar {
     if (this.mesh.userData.wheels) {
       this.mesh.userData.wheels.forEach(w => { w.rotation.y = this.wheelRot; });
     }
-    // brake lights
+    // brake lights — placeholder procedural
     const blCol = braking ? 0xff0000 : 0x440000;
     this.mesh.userData.brakeLights?.forEach(bl => bl.material.color.setHex(blCol));
+    // brake lights — modelo GLB real (pilotos traseros detectados por nombre)
+    if (this.mesh.userData.rearLightMeshes) {
+      const intensity = braking ? 4.0 : 2.0;
+      this.mesh.userData.rearLightMeshes.forEach(m => { m.material.emissiveIntensity = intensity; });
+    }
     // boost flame
     const fl = this.mesh.userData.flame;
     if (fl) {
@@ -943,7 +1246,7 @@ function resetCar() {
 // ═══════════════════════════════════════════════════
 // RACE INIT
 // ═══════════════════════════════════════════════════
-function initRace() {
+async function initRace() {
   if (playerCar) { playerCar.remove(); playerCar = null; }
   aiCars.forEach(a => a.remove()); aiCars = [];
   raceTime = 0; camReady = false;
@@ -960,6 +1263,24 @@ function initRace() {
   // place cams
   const p0 = playerCar._trackPt(0);
   camSmoothPos.set(p0.x, CAM_HEIGHT, p0.z - CAM_BACK);
+
+  // Cargar modelos 3D reales (.glb) del jugador y los rivales IA
+  const cars = [playerCar, ...aiCars];
+  const builds = [build, ...AI_BUILDS];
+  const loadProgress = new Array(cars.length).fill(0);
+  const fillEl = document.getElementById('load-fill');
+  const pctEl = document.getElementById('load-pct');
+  const updateLoadBar = () => {
+    const pct = Math.round((loadProgress.reduce((a, b) => a + b, 0) / loadProgress.length) * 100);
+    if (fillEl) fillEl.style.width = pct + '%';
+    if (pctEl) pctEl.textContent = 'CARGANDO COCHES... ' + pct + '%';
+  };
+  updateLoadBar();
+
+  await Promise.all(cars.map((car, i) => {
+    const carBuild = { ...builds[i], onProgress: f => { loadProgress[i] = f; updateLoadBar(); } };
+    return car.loadVisual(carBuild).finally(() => { loadProgress[i] = 1; updateLoadBar(); });
+  }));
 }
 
 // ═══════════════════════════════════════════════════
@@ -1007,32 +1328,36 @@ function showResult() {
 function buildMenu() {
   const row = document.getElementById('car-sel');
   row.innerHTML = '';
-  STOCK_BUILDS.forEach((b, i) => {
-    const d = document.createElement('div');
-    d.className = 'cs-btn' + (!garageBuild && i === 0 ? ' sel' : '');
-    d.style.borderColor = (!garageBuild && i === 0) ? b.hex : '#222';
-    d.style.color = (!garageBuild && i === 0) ? b.hex : '#fff';
-    d.innerHTML = `<div class="n">${b.name}</div><div class="s">SPD:${b.spd} · HDL:${b.hdl}</div>`;
-    d.onclick = () => {
-      garageBuild = null; // override garaje pick
-      selBuild = b;
-      document.querySelectorAll('.cs-btn').forEach(x => {
-        x.style.borderColor = '#222'; x.style.color = '#fff'; x.style.boxShadow = 'none';
-      });
-      d.style.borderColor = b.hex; d.style.color = b.hex; d.style.boxShadow = `0 0 14px ${b.hex}44`;
-    };
-    row.appendChild(d);
-  });
 
   // Show garaje badge if applicable
   const badge = document.getElementById('gar-badge');
   if (garageBuild) {
+    // Player brought a build from the garage — that's the car, no picker needed
     badge.style.display = 'block';
     badge.textContent = '🏎 ' + garageBuild.name.toUpperCase() + ' — DESDE TU GARAJE';
     selBuild = garageBuild;
+    row.style.display = 'none';
   } else {
     badge.style.display = 'none';
+    row.style.display = 'flex';
     if (!selBuild) selBuild = STOCK_BUILDS[0];
+
+    STOCK_BUILDS.forEach((b, i) => {
+      const d = document.createElement('div');
+      const isSel = selBuild === b;
+      d.className = 'cs-btn' + (isSel ? ' sel' : '');
+      d.style.borderColor = isSel ? b.hex : '#222';
+      d.style.color = isSel ? b.hex : '#fff';
+      d.innerHTML = `<div class="n">${b.name}</div><div class="s">SPD:${b.spd} · HDL:${b.hdl}</div>`;
+      d.onclick = () => {
+        selBuild = b;
+        document.querySelectorAll('.cs-btn').forEach(x => {
+          x.style.borderColor = '#222'; x.style.color = '#fff'; x.style.boxShadow = 'none';
+        });
+        d.style.borderColor = b.hex; d.style.color = b.hex; d.style.boxShadow = `0 0 14px ${b.hex}44`;
+      };
+      row.appendChild(d);
+    });
   }
 
   // Show bet badge if applicable
@@ -1058,9 +1383,11 @@ function goMenu() {
 // ═══════════════════════════════════════════════════
 // COUNTDOWN & START
 // ═══════════════════════════════════════════════════
-function startCD() {
+async function startCD() {
   hide('s-menu'); hide('s-result');
-  initRace();
+  show('s-loading');
+  await initRace();
+  hide('s-loading');
   show('s-cd');
   document.getElementById('ctrl').classList.add('on');
   const num = document.getElementById('cdn');
@@ -1101,26 +1428,35 @@ function menuCamera(dt) {
 // ═══════════════════════════════════════════════════
 (function readGaraje() {
   const p = new URLSearchParams(location.search);
-  const name  = p.get('name');
-  const color = p.get('color');
-  const spd   = parseFloat(p.get('spd') || '0');
-  const brand = p.get('brand') || '';
+  const name    = p.get('name');
+  const color   = p.get('color');
+  const spd     = parseFloat(p.get('spd') || '0');
+  const brand   = p.get('brand') || '';
+  const model   = p.get('model') || '';
+  const wheel   = p.get('wheel') || '';
+  const caliper = p.get('caliper') || '';
   if (!name || !color) return;
 
   const hexColor = color.startsWith('#') ? color : '#' + color;
   let colInt = 0xC41230;
   try { colInt = parseInt(hexColor.replace('#',''), 16); } catch(e) {}
 
+  const caliperHex = caliper ? (caliper.startsWith('#') ? caliper : '#' + caliper) : '';
+
   // Map score_speed (0-100) to game stat (6-10)
   const spdStat = 6 + Math.min(4, (spd / 100) * 4);
 
   garageBuild = {
-    name:  decodeURIComponent(name),
-    hex:   hexColor,
-    col:   colInt,
-    spd:   Math.round(spdStat * 10) / 10,
-    hdl:   8.0,
-    bst:   8.0,
+    name:       decodeURIComponent(name),
+    hex:        hexColor,
+    col:        colInt,
+    spd:        Math.round(spdStat * 10) / 10,
+    hdl:        8.0,
+    bst:        8.0,
+    brand:      brand,
+    model:      decodeURIComponent(model),
+    wheelId:    wheel || 'serie',
+    caliperHex: caliperHex,
   };
   selBuild = garageBuild;
 })();

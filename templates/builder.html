@@ -139,6 +139,27 @@
   pointer-events: none; transition: opacity 0.8s;
 }
 
+/* Viewer controls: vistas de cámara + modo noche */
+.viewer-controls {
+  position: absolute; bottom: 28px; right: 20px;
+  display: flex; flex-direction: column; gap: 6px;
+  align-items: flex-end; z-index: 10;
+}
+.vc-row { display: flex; gap: 4px; }
+.vc-btn {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 2px;
+  text-transform: uppercase; padding: 6px 10px;
+  background: rgba(3,3,12,0.55); border: 1px solid rgba(0,229,255,0.2);
+  color: rgba(180,210,255,0.6); cursor: pointer;
+  transition: all 0.2s; font-weight: 700;
+}
+.vc-btn:hover { color: var(--snow); border-color: rgba(0,229,255,0.5); background: rgba(0,229,255,0.08); }
+.vc-btn.active {
+  border-color: var(--pink); color: var(--white);
+  background: rgba(255,0,102,0.10);
+  box-shadow: 0 0 10px rgba(255,0,102,0.15);
+}
+
 /* Price overlay */
 .price-overlay {
   position: absolute; top: 56px; right: 20px;
@@ -485,6 +506,21 @@
       <div class="po-label">Precio total</div>
       <div class="po-price" id="po-price">€240,000</div>
     </div>
+
+    <div class="viewer-controls">
+      <div class="vc-row">
+        <button class="vc-btn" onclick="setCameraView('front')">Frontal</button>
+        <button class="vc-btn" onclick="setCameraView('side')">Lateral</button>
+        <button class="vc-btn" onclick="setCameraView('rear')">Trasera</button>
+        <button class="vc-btn" onclick="setCameraView('threeq')">3/4</button>
+      </div>
+      <div class="vc-row">
+        <button class="vc-btn" id="night-toggle" onclick="toggleNightMode()">Modo noche</button>
+        <button class="vc-btn" id="underglow-toggle" onclick="toggleUnderglow()">Neón</button>
+        <button class="vc-btn" id="xray-toggle" onclick="toggleXray()">Rayos X</button>
+        <button class="vc-btn" onclick="captureImage()">Foto</button>
+      </div>
+    </div>
   </div>
 
   <!-- SIDEBAR -->
@@ -594,6 +630,18 @@
         </div>
       </div>
 
+      <!-- Ficha técnica -->
+      <div class="sb-section">
+        <div class="sb-label">Ficha técnica</div>
+        <div class="recap-grid" style="margin-bottom:0;">
+          <span class="recap-key">Largo</span><span class="recap-val" id="dim-l">—</span>
+          <span class="recap-key">Ancho</span><span class="recap-val" id="dim-w">—</span>
+          <span class="recap-key">Alto</span><span class="recap-val" id="dim-h">—</span>
+          <span class="recap-key">0-100 km/h</span><span class="recap-val" id="dim-accel">—</span>
+          <span class="recap-key">V. Máxima</span><span class="recap-val" id="dim-vmax">—</span>
+        </div>
+      </div>
+
       <!-- AI -->
       <div class="sb-section">
         <div class="ai-box">
@@ -636,6 +684,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 <script>
 // (inline GLTFLoader removed — using CDN version with Draco support)
 var _unused=(function(){
@@ -766,6 +821,7 @@ window.addEventListener('load', () => {
       updateBadge(isReal);
       Car3D.applyWheels(cfg.wheelId);
       Car3D.applyCaliperColor(CALIPERS_DATA.find(c=>c.id===cfg.caliperId)?.hex || '#cc0000');
+      Car3D.applyInteriorColor(INTERIORS_DATA.find(i=>i.id===cfg.interiorId)?.swatch || '#1A1A1A', cfg.interiorId);
     }
   );
   buildBrandStrip();
@@ -778,6 +834,116 @@ window.addEventListener('load', () => {
   buildExtrasList();
   updateUI();
 });
+
+// ── VISOR: vistas de cámara + modo noche ──────────────────────
+function setCameraView(view) {
+  Car3D.setCameraView(view);
+}
+
+let nightModeOn = false;
+function toggleNightMode() {
+  nightModeOn = !nightModeOn;
+  Car3D.setNightMode(nightModeOn);
+  document.getElementById('night-toggle').classList.toggle('active', nightModeOn);
+}
+
+let underglowOn = false;
+function toggleUnderglow() {
+  underglowOn = !underglowOn;
+  Car3D.setUnderglow(underglowOn, CAR_DATA[cfg.brand].accent || '#00e5ff');
+  document.getElementById('underglow-toggle').classList.toggle('active', underglowOn);
+}
+
+function captureImage() {
+  const name = `apex-${cfg.brand}-${cfg.model}`.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  Car3D.captureImage(name);
+}
+
+let xrayOn = false;
+function toggleXray() {
+  xrayOn = !xrayOn;
+  Car3D.setXrayMode(xrayOn);
+  document.getElementById('xray-toggle').classList.toggle('active', xrayOn);
+}
+
+// ── SONIDO DE MOTOR ──────────────────────────────────────────
+// Sintetizado con Web Audio API — un "rev" corto cuyo timbre depende
+// de la categoría del motor (eléctrico, V6/V8/V10/V12/V16...).
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+  return audioCtx;
+}
+
+function engineProfile(name) {
+  const n = (name || '').toLowerCase();
+  if (n.includes('eléctrico') || n.includes('electric'))
+    return { type:'triangle', base:220, peak:880, harm:0.0,  noise:0.05, dur:0.9 };
+  if (n.includes('w16') || n.includes('v16'))
+    return { type:'sawtooth', base:55,  peak:140, harm:0.5,  noise:0.35, dur:1.1 };
+  if (n.includes('v12'))
+    return { type:'sawtooth', base:80,  peak:260, harm:0.4,  noise:0.25, dur:1.0 };
+  if (n.includes('v10'))
+    return { type:'sawtooth', base:70,  peak:220, harm:0.45, noise:0.30, dur:1.0 };
+  if (n.includes('v8'))
+    return { type:'square',   base:50,  peak:160, harm:0.6,  noise:0.35, dur:0.9 };
+  return { type:'sawtooth', base:65, peak:190, harm:0.5, noise:0.30, dur:0.85 }; // V6 / Flat-6 / EcoBoost
+}
+
+function playEngineSound(engineName) {
+  const ctx = getAudioCtx();
+  const prof = engineProfile(engineName);
+  const now = ctx.currentTime;
+
+  const master = ctx.createGain();
+  master.gain.setValueAtTime(0, now);
+  master.gain.linearRampToValueAtTime(0.22, now + 0.06);
+  master.gain.exponentialRampToValueAtTime(0.001, now + prof.dur);
+  master.connect(ctx.destination);
+
+  // Fundamental: subida de revoluciones seguida de caída
+  const osc = ctx.createOscillator();
+  osc.type = prof.type;
+  osc.frequency.setValueAtTime(prof.base, now);
+  osc.frequency.exponentialRampToValueAtTime(prof.peak, now + prof.dur * 0.35);
+  osc.frequency.exponentialRampToValueAtTime(prof.base * 0.85, now + prof.dur);
+  osc.connect(master);
+  osc.start(now);
+  osc.stop(now + prof.dur);
+
+  // Armónico una octava arriba — más cuerpo tonal
+  if (prof.harm > 0) {
+    const osc2 = ctx.createOscillator();
+    osc2.type = prof.type;
+    const g2 = ctx.createGain();
+    g2.gain.value = prof.harm;
+    osc2.frequency.setValueAtTime(prof.base * 2, now);
+    osc2.frequency.exponentialRampToValueAtTime(prof.peak * 2, now + prof.dur * 0.35);
+    osc2.frequency.exponentialRampToValueAtTime(prof.base * 1.7, now + prof.dur);
+    osc2.connect(g2); g2.connect(master);
+    osc2.start(now);
+    osc2.stop(now + prof.dur);
+  }
+
+  // Ruido de escape filtrado — textura mecánica
+  if (prof.noise > 0) {
+    const bufSize = Math.floor(ctx.sampleRate * prof.dur);
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf;
+    const filt = ctx.createBiquadFilter();
+    filt.type = 'bandpass';
+    filt.frequency.value = prof.base * 4;
+    const ng = ctx.createGain();
+    ng.gain.value = prof.noise;
+    noise.connect(filt); filt.connect(ng); ng.connect(master);
+    noise.start(now);
+    noise.stop(now + prof.dur);
+  }
+}
 
 // ── BRAND STRIP ──────────────────────────────────────────────
 function buildBrandStrip() {
@@ -809,10 +975,13 @@ function selectBrand(b) {
       updateBadge(isReal);
       Car3D.applyWheels(cfg.wheelId);
       Car3D.applyCaliperColor(CALIPERS_DATA.find(c=>c.id===cfg.caliperId)?.hex || '#cc0000');
+      Car3D.applyInteriorColor(INTERIORS_DATA.find(i=>i.id===cfg.interiorId)?.swatch || '#1A1A1A', cfg.interiorId);
     }
   );
   const accent = CAR_DATA[b].accent || '#ff0066';
   document.getElementById('co-brand').style.color = accent;
+  if (underglowOn) Car3D.setUnderglow(true, accent);
+  playEngineSound(cfg.engine);
   updateUI();
 }
 
@@ -829,6 +998,7 @@ function buildModelGrid() {
       cfg.model = m;
       document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('sel'));
       btn.classList.add('sel');
+      playEngineSound(cfg.engine);
       // Recargar modelo 3D si hay uno específico para este modelo
       Car3D.loadModel(cfg.brand, m,
         pct => { document.getElementById('loader-bar').style.width = pct+'%'; },
@@ -837,6 +1007,7 @@ function buildModelGrid() {
           Car3D.applyColor(cfg.colorIdx);
           Car3D.applyWheels(cfg.wheelId);
           Car3D.applyCaliperColor(CALIPERS_DATA.find(c=>c.id===cfg.caliperId)?.hex || '#cc0000');
+          Car3D.applyInteriorColor(INTERIORS_DATA.find(i=>i.id===cfg.interiorId)?.swatch || '#1A1A1A', cfg.interiorId);
         }
       );
       updateUI();
@@ -865,6 +1036,7 @@ function buildEngineList() {
       cfg.engine = e;
       document.querySelectorAll('.engine-item').forEach(d => d.classList.remove('sel'));
       div.classList.add('sel');
+      playEngineSound(cfg.engine);
       updateUI();
     };
     el.appendChild(div);
@@ -979,6 +1151,7 @@ function buildInteriorGrid() {
       cfg.interiorId = int.id;
       document.querySelectorAll('.interior-item').forEach(d => d.classList.remove('sel'));
       div.classList.add('sel');
+      Car3D.applyInteriorColor(int.swatch, int.id);
       updateUI();
     };
     grid.appendChild(div);
@@ -1128,6 +1301,17 @@ function updateUI() {
   document.getElementById('sm-sp-n').textContent = sp;
   document.getElementById('sm-ae-n').textContent = ae;
   document.getElementById('sm-re-n').textContent = re;
+
+  const dims = md.dims;
+  document.getElementById('dim-l').textContent = dims ? dims.l.toFixed(2)+' m' : '—';
+  document.getElementById('dim-w').textContent = dims ? dims.w.toFixed(2)+' m' : '—';
+  document.getElementById('dim-h').textContent = dims ? dims.h.toFixed(2)+' m' : '—';
+
+  // Rendimiento estimado a partir de la puntuación de velocidad (50-100 → 0-100km/h 4.6-2.0s, Vmax 280-425km/h)
+  const t0100 = (4.6 - (sp - 50) / 50 * 2.6).toFixed(1);
+  const vmax  = Math.round(280 + (sp - 50) / 50 * 145);
+  document.getElementById('dim-accel').textContent = t0100 + ' s';
+  document.getElementById('dim-vmax').textContent  = vmax + ' km/h';
 }
 
 function updateBadge(isReal) {

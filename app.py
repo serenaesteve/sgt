@@ -49,11 +49,11 @@ CAR_DATA = {
         "country": "Italia",
         "accent": "#C41230",
         "models": {
-            "296 GTB":       {"price": 0,       "speed_bonus": 18, "aesthetic_bonus": 22, "resale_bonus": 16},
-            "Roma":          {"price": 40000,    "speed_bonus": 15, "aesthetic_bonus": 26, "resale_bonus": 17},
-            "12 Cilindri":   {"price": 180000,   "speed_bonus": 22, "aesthetic_bonus": 28, "resale_bonus": 19},
-            "SF90 Stradale": {"price": 280000,   "speed_bonus": 26, "aesthetic_bonus": 24, "resale_bonus": 20},
-            "F80":           {"price": 3200000,  "speed_bonus": 38, "aesthetic_bonus": 35, "resale_bonus": 30},
+            "296 GTB":       {"price": 0,       "speed_bonus": 18, "aesthetic_bonus": 22, "resale_bonus": 16, "dims": {"l": 4.57, "w": 1.96, "h": 1.19}},
+            "Roma":          {"price": 40000,    "speed_bonus": 15, "aesthetic_bonus": 26, "resale_bonus": 17, "dims": {"l": 4.66, "w": 1.97, "h": 1.30}},
+            "12 Cilindri":   {"price": 180000,   "speed_bonus": 22, "aesthetic_bonus": 28, "resale_bonus": 19, "dims": {"l": 4.73, "w": 1.96, "h": 1.30}},
+            "SF90 Stradale": {"price": 280000,   "speed_bonus": 26, "aesthetic_bonus": 24, "resale_bonus": 20, "dims": {"l": 4.71, "w": 1.97, "h": 1.19}},
+            "F80":           {"price": 3200000,  "speed_bonus": 38, "aesthetic_bonus": 35, "resale_bonus": 30, "dims": {"l": 4.84, "w": 2.07, "h": 1.14}},
         },
         "engines": {
             "3.0L V6 Turbo Ibrido 830CV":    {"price": 0,     "speed_bonus": 18, "resale_bonus": 10},
@@ -67,10 +67,10 @@ CAR_DATA = {
         "country": "Italia",
         "accent": "#E8610A",
         "models": {
-            "Huracán Sterrato": {"price": 0,      "speed_bonus": 18, "aesthetic_bonus": 22, "resale_bonus": 15},
-            "Huracán STO":      {"price": 60000,  "speed_bonus": 24, "aesthetic_bonus": 25, "resale_bonus": 17},
-            "Temerario":        {"price": 220000, "speed_bonus": 26, "aesthetic_bonus": 26, "resale_bonus": 20},
-            "Revuelto":         {"price": 380000, "speed_bonus": 30, "aesthetic_bonus": 28, "resale_bonus": 22},
+            "Huracán Sterrato": {"price": 0,      "speed_bonus": 18, "aesthetic_bonus": 22, "resale_bonus": 15, "dims": {"l": 4.52, "w": 2.02, "h": 1.22}},
+            "Huracán STO":      {"price": 60000,  "speed_bonus": 24, "aesthetic_bonus": 25, "resale_bonus": 17, "dims": {"l": 4.53, "w": 1.94, "h": 1.22}},
+            "Temerario":        {"price": 220000, "speed_bonus": 26, "aesthetic_bonus": 26, "resale_bonus": 20, "dims": {"l": 4.74, "w": 2.00, "h": 1.18}},
+            "Revuelto":         {"price": 380000, "speed_bonus": 30, "aesthetic_bonus": 28, "resale_bonus": 22, "dims": {"l": 4.86, "w": 2.04, "h": 1.18}},
         },
         "engines": {
             "5.2L V10 NA 640CV":              {"price": 0,     "speed_bonus": 20, "resale_bonus": 12},
@@ -83,11 +83,11 @@ CAR_DATA = {
         "country": "Alemania",
         "accent": "#C9A84C",
         "models": {
-            "911 Carrera GTS":    {"price": 0,      "speed_bonus": 16, "aesthetic_bonus": 20, "resale_bonus": 22},
-            "Cayman GT4 RS":      {"price": 50000,  "speed_bonus": 20, "aesthetic_bonus": 21, "resale_bonus": 22},
-            "911 GT3":            {"price": 100000, "speed_bonus": 24, "aesthetic_bonus": 22, "resale_bonus": 24},
-            "911 GT3 RS":         {"price": 150000, "speed_bonus": 26, "aesthetic_bonus": 23, "resale_bonus": 24},
-            "Panamera Turbo S":   {"price": 220000, "speed_bonus": 20, "aesthetic_bonus": 25, "resale_bonus": 24},
+            "911 Carrera GTS":    {"price": 0,      "speed_bonus": 16, "aesthetic_bonus": 20, "resale_bonus": 22, "dims": {"l": 4.54, "w": 1.85, "h": 1.30}},
+            "Cayman GT4 RS":      {"price": 50000,  "speed_bonus": 20, "aesthetic_bonus": 21, "resale_bonus": 22, "dims": {"l": 4.46, "w": 1.82, "h": 1.27}},
+            "911 GT3":            {"price": 100000, "speed_bonus": 24, "aesthetic_bonus": 22, "resale_bonus": 24, "dims": {"l": 4.57, "w": 1.85, "h": 1.27}},
+            "911 GT3 RS":         {"price": 150000, "speed_bonus": 26, "aesthetic_bonus": 23, "resale_bonus": 24, "dims": {"l": 4.59, "w": 1.90, "h": 1.28}},
+            "Panamera Turbo S":   {"price": 220000, "speed_bonus": 20, "aesthetic_bonus": 25, "resale_bonus": 24, "dims": {"l": 5.05, "w": 1.94, "h": 1.43}},
         },
         "engines": {
             "3.0L Flat-6 BiTurbo 480CV":   {"price": 0,     "speed_bonus": 16, "resale_bonus": 14},
@@ -101,10 +101,10 @@ CAR_DATA = {
         "country": "Gran Bretaña",
         "accent": "#FF8C00",
         "models": {
-            "Artura":  {"price": 0,       "speed_bonus": 19, "aesthetic_bonus": 21, "resale_bonus": 16},
-            "GTS":     {"price": 60000,   "speed_bonus": 20, "aesthetic_bonus": 22, "resale_bonus": 17},
-            "750S":    {"price": 120000,  "speed_bonus": 25, "aesthetic_bonus": 23, "resale_bonus": 18},
-            "W1":      {"price": 1800000, "speed_bonus": 38, "aesthetic_bonus": 34, "resale_bonus": 28},
+            "Artura":  {"price": 0,       "speed_bonus": 19, "aesthetic_bonus": 21, "resale_bonus": 16, "dims": {"l": 4.53, "w": 1.93, "h": 1.19}},
+            "GTS":     {"price": 60000,   "speed_bonus": 20, "aesthetic_bonus": 22, "resale_bonus": 17, "dims": {"l": 4.68, "w": 1.94, "h": 1.19}},
+            "750S":    {"price": 120000,  "speed_bonus": 25, "aesthetic_bonus": 23, "resale_bonus": 18, "dims": {"l": 4.55, "w": 1.93, "h": 1.20}},
+            "W1":      {"price": 1800000, "speed_bonus": 38, "aesthetic_bonus": 34, "resale_bonus": 28, "dims": {"l": 4.74, "w": 2.06, "h": 1.14}},
         },
         "engines": {
             "3.8L V8 BiTurbo 620CV":              {"price": 0,      "speed_bonus": 19, "resale_bonus": 10},
@@ -117,10 +117,10 @@ CAR_DATA = {
         "country": "Gran Bretaña",
         "accent": "#1B4D2E",
         "models": {
-            "DB12":     {"price": 0,      "speed_bonus": 15, "aesthetic_bonus": 24, "resale_bonus": 18},
-            "Vantage":  {"price": 50000,  "speed_bonus": 18, "aesthetic_bonus": 22, "resale_bonus": 18},
-            "Vanquish": {"price": 180000, "speed_bonus": 20, "aesthetic_bonus": 26, "resale_bonus": 20},
-            "Valhalla": {"price": 600000, "speed_bonus": 32, "aesthetic_bonus": 30, "resale_bonus": 25},
+            "DB12":     {"price": 0,      "speed_bonus": 15, "aesthetic_bonus": 24, "resale_bonus": 18, "dims": {"l": 4.72, "w": 1.97, "h": 1.29}},
+            "Vantage":  {"price": 50000,  "speed_bonus": 18, "aesthetic_bonus": 22, "resale_bonus": 18, "dims": {"l": 4.49, "w": 1.94, "h": 1.27}},
+            "Vanquish": {"price": 180000, "speed_bonus": 20, "aesthetic_bonus": 26, "resale_bonus": 20, "dims": {"l": 4.78, "w": 2.00, "h": 1.30}},
+            "Valhalla": {"price": 600000, "speed_bonus": 32, "aesthetic_bonus": 30, "resale_bonus": 25, "dims": {"l": 4.86, "w": 2.01, "h": 1.20}},
         },
         "engines": {
             "4.0L V8 BiTurbo 665CV":    {"price": 0,      "speed_bonus": 15, "resale_bonus": 12},
@@ -134,8 +134,8 @@ CAR_DATA = {
         "country": "Francia",
         "accent": "#1B3A6B",
         "models": {
-            "Chiron Super Sport": {"price": 0,       "speed_bonus": 38, "aesthetic_bonus": 30, "resale_bonus": 28},
-            "Tourbillon":         {"price": 2500000, "speed_bonus": 45, "aesthetic_bonus": 38, "resale_bonus": 35},
+            "Chiron Super Sport": {"price": 0,       "speed_bonus": 38, "aesthetic_bonus": 30, "resale_bonus": 28, "dims": {"l": 4.54, "w": 2.04, "h": 1.21}},
+            "Tourbillon":         {"price": 2500000, "speed_bonus": 45, "aesthetic_bonus": 38, "resale_bonus": 35, "dims": {"l": 4.67, "w": 2.03, "h": 1.19}},
         },
         "engines": {
             "8.0L W16 QuadTurbo 1578CV": {"price": 0,      "speed_bonus": 38, "resale_bonus": 22},
@@ -147,10 +147,10 @@ CAR_DATA = {
         "country": "Italia",
         "accent": "#1B3A6B",
         "models": {
-            "MC20":               {"price": 0,      "speed_bonus": 20, "aesthetic_bonus": 24, "resale_bonus": 16},
-            "MC20 Cielo":         {"price": 65000,  "speed_bonus": 19, "aesthetic_bonus": 26, "resale_bonus": 17},
-            "GranTurismo Folgore":{"price": 80000,  "speed_bonus": 22, "aesthetic_bonus": 26, "resale_bonus": 18},
-            "GranCabrio Folgore": {"price": 100000, "speed_bonus": 20, "aesthetic_bonus": 28, "resale_bonus": 19},
+            "MC20":               {"price": 0,      "speed_bonus": 20, "aesthetic_bonus": 24, "resale_bonus": 16, "dims": {"l": 4.67, "w": 1.96, "h": 1.22}},
+            "MC20 Cielo":         {"price": 65000,  "speed_bonus": 19, "aesthetic_bonus": 26, "resale_bonus": 17, "dims": {"l": 4.67, "w": 1.96, "h": 1.22}},
+            "GranTurismo Folgore":{"price": 80000,  "speed_bonus": 22, "aesthetic_bonus": 26, "resale_bonus": 18, "dims": {"l": 4.97, "w": 1.96, "h": 1.35}},
+            "GranCabrio Folgore": {"price": 100000, "speed_bonus": 20, "aesthetic_bonus": 28, "resale_bonus": 19, "dims": {"l": 4.97, "w": 1.96, "h": 1.34}},
         },
         "engines": {
             "3.0L V6 Nettuno BiTurbo 630CV": {"price": 0,     "speed_bonus": 20, "resale_bonus": 12},
@@ -162,10 +162,10 @@ CAR_DATA = {
         "country": "USA",
         "accent": "#003087",
         "models": {
-            "Mustang GT":        {"price": 0,     "speed_bonus": 13, "aesthetic_bonus": 18, "resale_bonus": 12},
-            "Mustang Mach 1":    {"price": 12000, "speed_bonus": 15, "aesthetic_bonus": 20, "resale_bonus": 13},
-            "Mustang Dark Horse":{"price": 22000, "speed_bonus": 17, "aesthetic_bonus": 22, "resale_bonus": 14},
-            "Shelby GT500":      {"price": 38000, "speed_bonus": 22, "aesthetic_bonus": 24, "resale_bonus": 16},
+            "Mustang GT":        {"price": 0,     "speed_bonus": 13, "aesthetic_bonus": 18, "resale_bonus": 12, "dims": {"l": 4.81, "w": 1.92, "h": 1.40}},
+            "Mustang Mach 1":    {"price": 12000, "speed_bonus": 15, "aesthetic_bonus": 20, "resale_bonus": 13, "dims": {"l": 4.81, "w": 1.92, "h": 1.40}},
+            "Mustang Dark Horse":{"price": 22000, "speed_bonus": 17, "aesthetic_bonus": 22, "resale_bonus": 14, "dims": {"l": 4.81, "w": 1.92, "h": 1.40}},
+            "Shelby GT500":      {"price": 38000, "speed_bonus": 22, "aesthetic_bonus": 24, "resale_bonus": 16, "dims": {"l": 4.79, "w": 1.92, "h": 1.40}},
         },
         "engines": {
             "2.3L EcoBoost 315CV":         {"price": 0,      "speed_bonus": 11, "resale_bonus": 8},
@@ -178,10 +178,10 @@ CAR_DATA = {
         "country": "Japón",
         "accent": "#C8102E",
         "models": {
-            "GT-R Premium":        {"price": 0,     "speed_bonus": 18, "aesthetic_bonus": 19, "resale_bonus": 16},
-            "GT-R Track Edition":  {"price": 20000, "speed_bonus": 20, "aesthetic_bonus": 20, "resale_bonus": 17},
-            "GT-R NISMO":          {"price": 60000, "speed_bonus": 24, "aesthetic_bonus": 22, "resale_bonus": 19},
-            "GT-R NISMO Special":  {"price": 95000, "speed_bonus": 26, "aesthetic_bonus": 24, "resale_bonus": 20},
+            "GT-R Premium":        {"price": 0,     "speed_bonus": 18, "aesthetic_bonus": 19, "resale_bonus": 16, "dims": {"l": 4.71, "w": 1.90, "h": 1.37}},
+            "GT-R Track Edition":  {"price": 20000, "speed_bonus": 20, "aesthetic_bonus": 20, "resale_bonus": 17, "dims": {"l": 4.71, "w": 1.90, "h": 1.36}},
+            "GT-R NISMO":          {"price": 60000, "speed_bonus": 24, "aesthetic_bonus": 22, "resale_bonus": 19, "dims": {"l": 4.71, "w": 1.90, "h": 1.35}},
+            "GT-R NISMO Special":  {"price": 95000, "speed_bonus": 26, "aesthetic_bonus": 24, "resale_bonus": 20, "dims": {"l": 4.71, "w": 1.90, "h": 1.35}},
         },
         "engines": {
             "3.8L V6 BiTurbo 570CV":        {"price": 0,     "speed_bonus": 18, "resale_bonus": 12},
@@ -194,10 +194,10 @@ CAR_DATA = {
         "country": "Alemania",
         "accent": "#BB0A30",
         "models": {
-            "R8 V10":              {"price": 0,     "speed_bonus": 17, "aesthetic_bonus": 22, "resale_bonus": 17},
-            "R8 Spyder":           {"price": 25000, "speed_bonus": 16, "aesthetic_bonus": 24, "resale_bonus": 18},
-            "R8 V10 Performance":  {"price": 35000, "speed_bonus": 20, "aesthetic_bonus": 22, "resale_bonus": 18},
-            "R8 V10 GT":           {"price": 80000, "speed_bonus": 23, "aesthetic_bonus": 24, "resale_bonus": 20},
+            "R8 V10":              {"price": 0,     "speed_bonus": 17, "aesthetic_bonus": 22, "resale_bonus": 17, "dims": {"l": 4.43, "w": 1.94, "h": 1.24}},
+            "R8 Spyder":           {"price": 25000, "speed_bonus": 16, "aesthetic_bonus": 24, "resale_bonus": 18, "dims": {"l": 4.43, "w": 1.94, "h": 1.24}},
+            "R8 V10 Performance":  {"price": 35000, "speed_bonus": 20, "aesthetic_bonus": 22, "resale_bonus": 18, "dims": {"l": 4.43, "w": 1.94, "h": 1.24}},
+            "R8 V10 GT":           {"price": 80000, "speed_bonus": 23, "aesthetic_bonus": 24, "resale_bonus": 20, "dims": {"l": 4.43, "w": 1.94, "h": 1.23}},
         },
         "engines": {
             "5.2L V10 FSI 570CV":             {"price": 0,     "speed_bonus": 17, "resale_bonus": 13},
