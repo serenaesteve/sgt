@@ -119,6 +119,7 @@ let currentModel = null;
 let bodyMeshes    = [];
 let caliperMeshes = [];
 let rimMeshes     = [];   // llantas — para cambiar color/estilo
+let spinTargets   = [];   // objetos a rotar en el giro idle de las ruedas (malla o pivote del buje)
 let interiorMeshes = [];  // tapicería — para cambiar color del interior
 let currentColorIdx = 0;
 let autoRotate = true;
@@ -458,7 +459,11 @@ function animate() {
   requestAnimationFrame(animate);
   if (autoRotate) { rotY += 0.003; updateCamera(); }
   // Ruedas girando al ralentí — ambiente de showroom (solo modelos GLB reales)
-  if (currentFile) rimMeshes.forEach(m => { if (m.userData.canSpin) m.rotation.x += 0.012; });
+  if (currentFile) spinTargets.forEach(m => {
+    m.rotation.x += 0.012;
+    const c = m.userData.spinCenter;
+    m.position.copy(m.userData.spinBasePos).add(c).sub(c.clone().applyEuler(m.rotation));
+  });
   if (composer) composer.render(); else renderer.render(scene, camera);
 }
 
@@ -510,12 +515,23 @@ function loadModel(brand, model, onProgress, onDone) {
   );
 }
 
-// Una malla solo puede girar de forma segura en el render si su pivote (origen local)
-// está cerca del centro de su geometría — si no, rotar la orbita lejos de su sitio.
-function markSpinSafety(mesh) {
-  mesh.geometry.computeBoundingBox();
-  const center = mesh.geometry.boundingBox.getCenter(new THREE.Vector3());
-  mesh.userData.canSpin = center.length() < 0.1;
+// Prepara una malla de llanta para el giro idle. Guarda su posición/rotación
+// originales y el centro de su geometría: en animate() se compensa la posición
+// cada frame para que la malla gire sobre el centro de su geometría (el buje)
+// en vez de orbitar lejos de su sitio cuando ese centro no coincide con el
+// origen local de la malla. No modifica el árbol de la escena (seguro de
+// llamar varias veces sobre el mismo modelo cacheado).
+function setupWheelSpin(mesh) {
+  if (mesh.userData.spinBasePos) {
+    mesh.position.copy(mesh.userData.spinBasePos);
+    mesh.rotation.copy(mesh.userData.spinBaseRot);
+  } else {
+    mesh.geometry.computeBoundingBox();
+    mesh.userData.spinCenter  = mesh.geometry.boundingBox.getCenter(new THREE.Vector3());
+    mesh.userData.spinBasePos = mesh.position.clone();
+    mesh.userData.spinBaseRot = mesh.rotation.clone();
+  }
+  spinTargets.push(mesh);
 }
 
 function normalizeModel(model, brand, cfgOverride) {
@@ -533,6 +549,7 @@ function normalizeModel(model, brand, cfgOverride) {
   bodyMeshes    = [];
   caliperMeshes = [];
   rimMeshes     = [];
+  spinTargets   = [];
   interiorMeshes = [];
   const cfg = cfgOverride || MODEL_MAP[brand] || {};
   currentFile = cfg.file || null;
@@ -598,7 +615,6 @@ function normalizeModel(model, brand, cfgOverride) {
     if (n.includes('rim') || n.includes('spoke') || n.includes('hub') || n.includes('alloy') ||
         (n.includes('wheel') && !n.includes('tire') && !n.includes('tyre'))) {
       child.material = glbRimMat.clone();
-      markSpinSafety(child);
       rimMeshes.push(child); return;
     }
     if (n.includes('headlight') || n.includes('drl') || n.includes('_led') ||
@@ -674,6 +690,10 @@ function normalizeModel(model, brand, cfgOverride) {
     });
     if (top) { top.material = mkPaint(); bodyMeshes = [top]; }
   }
+
+  // Preparar el giro idle de las llantas (fuera de model.traverse: envolver una
+  // malla en un grupo pivote modifica el árbol de la escena y rompe la iteración).
+  rimMeshes.forEach(setupWheelSpin);
 }
 
 function swapModel(model, brand) {
@@ -819,6 +839,7 @@ function buildFallback(brand) {
   bodyMeshes    = [];
   caliperMeshes = [];
   rimMeshes     = [];
+  spinTargets   = [];
   interiorMeshes = [];
   currentFile = null;
 
