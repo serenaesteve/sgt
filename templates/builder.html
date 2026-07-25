@@ -309,6 +309,13 @@
   border: 1px solid rgba(255,255,255,0.3);
 }
 .cdot.hidden { display: none; }
+.cdot--custom {
+  background: conic-gradient(red,yellow,lime,cyan,blue,magenta,red);
+  border: 2px dashed rgba(255,255,255,0.35);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+}
+.cdot--custom.sel { border-color: var(--white); border-style: solid; }
 
 .color-info {
   font-size: 11px; letter-spacing: 1px; color: var(--ash);
@@ -518,6 +525,7 @@
         <button class="vc-btn" id="night-toggle" onclick="toggleNightMode()">Modo noche</button>
         <button class="vc-btn" id="underglow-toggle" onclick="toggleUnderglow()">Neón</button>
         <button class="vc-btn" id="xray-toggle" onclick="toggleXray()">Rayos X</button>
+        <button class="vc-btn" id="cinema-toggle" onclick="toggleCinema()">Cine</button>
         <button class="vc-btn" onclick="captureImage()">Foto</button>
       </div>
     </div>
@@ -802,15 +810,22 @@ const BRAND_ORDER = [
 ];
 
 let cfg = {
-  brand:      'Ferrari',
-  model:      Object.keys(CAR_DATA['Ferrari'].models)[0],
-  engine:     Object.keys(CAR_DATA['Ferrari'].engines)[0],
-  colorIdx:   0,
-  wheelId:    'serie',
-  interiorId: 'nappa_negro',
-  caliperId:  'red',
-  extras:     []
+  brand:          'Ferrari',
+  model:          Object.keys(CAR_DATA['Ferrari'].models)[0],
+  engine:         Object.keys(CAR_DATA['Ferrari'].engines)[0],
+  colorIdx:       0,
+  customColorHex: null,   // color personalizado (null = usar preset)
+  wheelId:        'serie',
+  interiorId:     'nappa_negro',
+  caliperId:      'red',
+  extras:         []
 };
+
+// Devuelve { name, hex, finish } del color activo, sea preset o personalizado.
+function currentColorInfo() {
+  if (cfg.colorIdx >= 0) return Car3D.COLORS[cfg.colorIdx];
+  return { name: 'Custom', hex: cfg.customColorHex || '#ff0000', finish: 'Gloss' };
+}
 
 // ── INIT ─────────────────────────────────────────────────────
 window.addEventListener('load', () => {
@@ -864,6 +879,13 @@ function toggleXray() {
   xrayOn = !xrayOn;
   Car3D.setXrayMode(xrayOn);
   document.getElementById('xray-toggle').classList.toggle('active', xrayOn);
+}
+
+let cinemaOn = false;
+function toggleCinema() {
+  cinemaOn = !cinemaOn;
+  Car3D.setCinemaMode(cinemaOn);
+  document.getElementById('cinema-toggle').classList.toggle('active', cinemaOn);
 }
 
 // ── SONIDO DE MOTOR ──────────────────────────────────────────
@@ -1004,7 +1026,8 @@ function buildModelGrid() {
         pct => { document.getElementById('loader-bar').style.width = pct+'%'; },
         isReal => {
           updateBadge(isReal);
-          Car3D.applyColor(cfg.colorIdx);
+          if (cfg.colorIdx >= 0) Car3D.applyColor(cfg.colorIdx);
+          else if (cfg.customColorHex) Car3D.setCustomColor(cfg.customColorHex);
           Car3D.applyWheels(cfg.wheelId);
           Car3D.applyCaliperColor(CALIPERS_DATA.find(c=>c.id===cfg.caliperId)?.hex || '#cc0000');
           Car3D.applyInteriorColor(INTERIORS_DATA.find(i=>i.id===cfg.interiorId)?.swatch || '#1A1A1A', cfg.interiorId);
@@ -1056,6 +1079,16 @@ function buildColorGrid() {
     d.onclick = () => selectColor(i, d);
     grid.appendChild(d);
   });
+  // Swatch de color personalizado
+  const custom = document.createElement('div');
+  custom.className = 'cdot cdot--custom';
+  custom.title = 'Color personalizado';
+  custom.dataset.finish = '';
+  custom.innerHTML = `✦<input type="color" id="custom-color-input" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;" value="#ff0000">`;
+  custom.style.position = 'relative';
+  custom.onclick = e => { if (e.target.tagName !== 'INPUT') custom.querySelector('input').click(); };
+  custom.querySelector('input').addEventListener('input', e => selectCustomColor(e.target.value, custom));
+  grid.appendChild(custom);
 }
 
 let activeFinish = '';
@@ -1070,6 +1103,8 @@ function filterFinish(finish, btn) {
 
 function selectColor(i, dot) {
   cfg.colorIdx = i;
+  cfg.customColorHex = null;
+  Car3D.clearCustomColor();
   document.querySelectorAll('.cdot').forEach(d => d.classList.remove('sel'));
   dot.classList.add('sel');
   const c  = Car3D.COLORS[i];
@@ -1078,6 +1113,18 @@ function selectColor(i, dot) {
   document.getElementById('color-finish').textContent  = c.finish;
   document.getElementById('color-price').textContent   = cd.price > 0 ? '+€'+cd.price.toLocaleString('es-ES') : 'Incluido';
   Car3D.applyColor(i);
+  updateUI();
+}
+
+function selectCustomColor(hex, dot) {
+  cfg.colorIdx = -1;
+  cfg.customColorHex = hex;
+  document.querySelectorAll('.cdot').forEach(d => d.classList.remove('sel'));
+  dot.classList.add('sel');
+  document.getElementById('color-name').textContent   = 'Custom';
+  document.getElementById('color-finish').textContent = 'Gloss';
+  document.getElementById('color-price').textContent  = 'Incluido';
+  Car3D.setCustomColor(hex);
   updateUI();
 }
 
@@ -1220,7 +1267,7 @@ function renderFinalRecap() {
   const wheelName   = WHEELS_DATA.find(w=>w.id===cfg.wheelId)?.name || '—';
   const intName     = INTERIORS_DATA.find(i=>i.id===cfg.interiorId)?.name || '—';
   const calName     = CALIPERS_DATA.find(c=>c.id===cfg.caliperId)?.name || '—';
-  const colorName   = Car3D.COLORS[cfg.colorIdx].name;
+  const colorName   = currentColorInfo().name;
 
   document.getElementById('final-recap').innerHTML = `
     <div class="sb-label" style="margin-bottom:8px;">Resumen de configuración</div>
@@ -1228,7 +1275,7 @@ function renderFinalRecap() {
       <span class="recap-key">Marca</span><span class="recap-val">${cfg.brand}</span>
       <span class="recap-key">Modelo</span><span class="recap-val">${cfg.model}</span>
       <span class="recap-key">Motor</span><span class="recap-val">${cfg.engine}</span>
-      <span class="recap-key">Color</span><span class="recap-val">${colorName} (${Car3D.COLORS[cfg.colorIdx].finish})</span>
+      <span class="recap-key">Color</span><span class="recap-val">${colorName} (${currentColorInfo().finish})</span>
       <span class="recap-key">Llantas</span><span class="recap-val">${wheelName}</span>
       <span class="recap-key">Calipers</span><span class="recap-val">${calName}</span>
       <span class="recap-key">Interior</span><span class="recap-val">${intName}</span>
@@ -1333,7 +1380,7 @@ function getAI() {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({
       brand:cfg.brand, model:cfg.model, engine:cfg.engine,
-      color: Car3D.COLORS[cfg.colorIdx].name,
+      color: currentColorInfo().name,
       wheel_id: cfg.wheelId, interior_id: cfg.interiorId,
       extras:cfg.extras, budget_left:USER_BUDGET-calcTotal(), total_price:calcTotal()
     })
@@ -1353,8 +1400,8 @@ function saveBuild() {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({
       name, brand:cfg.brand, model:cfg.model, engine:cfg.engine,
-      color: Car3D.COLORS[cfg.colorIdx].name,
-      color_hex: Car3D.COLORS[cfg.colorIdx].hex,
+      color: currentColorInfo().name,
+      color_hex: currentColorInfo().hex,
       wheel_id: cfg.wheelId,
       interior_id: cfg.interiorId,
       caliper_id: cfg.caliperId,

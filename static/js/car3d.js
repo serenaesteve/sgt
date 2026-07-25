@@ -134,6 +134,10 @@ let carbonTexture = null; // textura de fibra de carbono, generada una sola vez
 let underglow = null;     // luz de neón bajo el coche
 let xrayMode = false;      // vista de rayos X — carrocería semitransparente
 const XRAY_OPACITY = 0.18;
+let customColorHex = null; // pintura personalizada (null = usar COLORS[colorIdx])
+let enterAnim = null;      // animación de entrada al cargar modelo
+let cinemaMode = false;    // modo cinematográfico: órbita autónoma dramática
+let cinemaClock = 0;
 
 // Estilos de llantas: color y propiedades PBR
 const WHEEL_STYLES = {
@@ -163,7 +167,7 @@ function initThree(mountId) {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.4;
+  renderer.toneMappingExposure = 1.0;
   renderer.physicallyCorrectLights = true;
   mount.appendChild(renderer.domElement);
 
@@ -191,7 +195,7 @@ function setupComposer(W, H) {
   try {
     composer = new THREE.EffectComposer(renderer);
     composer.addPass(new THREE.RenderPass(scene, camera));
-    bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(W, H), 0.45, 0.35, 0.92);
+    bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(W, H), 0.40, 0.35, 0.97);
     composer.addPass(bloomPass);
     composer.renderTarget1.texture.encoding = THREE.sRGBEncoding;
     composer.renderTarget2.texture.encoding = THREE.sRGBEncoding;
@@ -202,37 +206,44 @@ function setupComposer(W, H) {
 }
 
 function setupLights() {
-  const ambient = new THREE.AmbientLight(0xffffff, 0.45);  // bajo para más contraste; el key light aporta el brillo principal
+  // Luz ambiente: rellena sombras para que los detalles sean legibles sin aplanar la forma
+  const ambient = new THREE.AmbientLight(0xffffff, 0.35);
   scene.add(ambient);
 
-  const key = new THREE.DirectionalLight(0xfff8e8, 3.2);
+  // Key light: cálido, desde arriba-derecha-frontal — define la forma del coche
+  const key = new THREE.DirectionalLight(0xfff4e0, 2.6);
   key.position.set(6, 12, 7);
   key.castShadow = true;
-  key.shadow.mapSize.width  = 2048;
-  key.shadow.mapSize.height = 2048;
+  key.shadow.mapSize.width  = 4096;
+  key.shadow.mapSize.height = 4096;
   key.shadow.camera.near = 0.5;
   key.shadow.camera.far  = 60;
-  key.shadow.camera.left   = -10;
-  key.shadow.camera.right  = 10;
-  key.shadow.camera.top    = 10;
-  key.shadow.camera.bottom = -10;
-  key.shadow.bias = -0.0005;
+  key.shadow.camera.left   = -7;
+  key.shadow.camera.right  = 7;
+  key.shadow.camera.top    = 7;
+  key.shadow.camera.bottom = -7;
+  key.shadow.bias       = -0.0003;
+  key.shadow.normalBias = 0.02;
   scene.add(key);
 
-  const fill = new THREE.DirectionalLight(0x8ab4ff, 1.1);
+  // Fill light: azul frío desde izquierda-trasera — suaviza sombras sin anular el contraste
+  const fill = new THREE.DirectionalLight(0x5080d0, 0.65);
   fill.position.set(-7, 5, -5);
   scene.add(fill);
 
-  const rim = new THREE.DirectionalLight(0xff3300, 0.7);
-  rim.position.set(0, 4, -10);
+  // Rim light trasero: azul frío desde detrás — separa el coche del fondo, efecto fotografía de automoción
+  const rim = new THREE.DirectionalLight(0x2255ee, 0.90);
+  rim.position.set(0, 3, -10);
   scene.add(rim);
 
-  const hemi = new THREE.HemisphereLight(0x444444, 0x111111, 0.30);
+  // Hemisferio: simula la reflexión sutil del cielo oscuro del estudio
+  const hemi = new THREE.HemisphereLight(0x1a2a44, 0x000000, 0.22);
   scene.add(hemi);
 
+  // Spots de cabina: revelan el techo y los ángulos superiores del coche
   const spots = [];
   [-4, 4].forEach(x => {
-    const spot = new THREE.SpotLight(0xffffff, 1.8, 22, Math.PI / 5.5, 0.35, 1);
+    const spot = new THREE.SpotLight(0xffffff, 1.2, 22, Math.PI / 5.5, 0.40, 1);
     spot.position.set(x, 9, 2);
     spot.target.position.set(x * 0.25, 0, 0);
     scene.add(spot);
@@ -261,11 +272,11 @@ function setNightMode(on) {
     if (l) l.intensity = l.userData.dayIntensity * factor;
   });
 
-  renderer.toneMappingExposure = on ? 1.0 : 1.4;
+  renderer.toneMappingExposure = on ? 0.85 : 1.0;
 
   if (bloomPass) {
-    bloomPass.strength = on ? 0.85 : 0.45;
-    bloomPass.threshold = on ? 0.65 : 0.92;
+    bloomPass.strength  = on ? 0.85  : 0.40;
+    bloomPass.threshold = on ? 0.60  : 0.97;
   }
 }
 
@@ -299,14 +310,21 @@ function setupEnvironment() {
   const aoCanvas = document.createElement('canvas');
   aoCanvas.width = aoCanvas.height = 256;
   const actx = aoCanvas.getContext('2d');
-  const grad = actx.createRadialGradient(128, 128, 0, 128, 128, 128);
-  grad.addColorStop(0,   'rgba(0,0,0,0.55)');
-  grad.addColorStop(0.7, 'rgba(0,0,0,0.22)');
+  // Sombra elíptica que sigue la silueta real del coche (más larga que ancha)
+  actx.save();
+  actx.translate(128, 128);
+  actx.scale(1, 0.38);  // aplana para simular sombra desde arriba en plano
+  const grad = actx.createRadialGradient(0, 0, 0, 0, 0, 128);
+  grad.addColorStop(0,   'rgba(0,0,0,0.70)');
+  grad.addColorStop(0.55,'rgba(0,0,0,0.32)');
   grad.addColorStop(1,   'rgba(0,0,0,0)');
   actx.fillStyle = grad;
-  actx.fillRect(0, 0, 256, 256);
+  actx.beginPath();
+  actx.arc(0, 0, 128, 0, Math.PI * 2);
+  actx.fill();
+  actx.restore();
   const aoMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(aoCanvas), transparent: true, depthWrite: false });
-  const aoBlob = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 5.6), aoMat);
+  const aoBlob = new THREE.Mesh(new THREE.PlaneGeometry(7.0, 2.8), aoMat);
   aoBlob.rotation.x = -Math.PI / 2;
   aoBlob.position.y = 0.0015;
   scene.add(aoBlob);
@@ -457,13 +475,32 @@ function setupResize(container) {
 
 function animate() {
   requestAnimationFrame(animate);
-  if (autoRotate) { rotY += 0.003; updateCamera(); }
+
+  if (enterAnim) {
+    const t = Math.min((Date.now() - enterAnim.t0) / enterAnim.dur, 1);
+    const e = 1 - Math.pow(1 - t, 3);
+    dist = enterAnim.fromDist + (enterAnim.toDist - enterAnim.fromDist) * e;
+    rotY  = enterAnim.fromRotY  + (enterAnim.toRotY  - enterAnim.fromRotY)  * e;
+    rotX  = enterAnim.fromRotX  + (enterAnim.toRotX  - enterAnim.fromRotX)  * e;
+    updateCamera();
+    if (t >= 1) { enterAnim = null; autoRotate = true; }
+  } else if (cinemaMode) {
+    cinemaClock += 0.012;
+    rotY += 0.004;
+    dist  = 8.0 + Math.sin(cinemaClock * 0.50) * 2.3;
+    rotX  = 0.15 + Math.sin(cinemaClock * 0.27) * 0.11;
+    updateCamera();
+  } else if (autoRotate) {
+    rotY += 0.003; updateCamera();
+  }
+
   // Ruedas girando al ralentí — ambiente de showroom (solo modelos GLB reales)
   if (currentFile) spinTargets.forEach(m => {
     m.rotation.x += 0.012;
     const c = m.userData.spinCenter;
     m.position.copy(m.userData.spinBasePos).add(c).sub(c.clone().applyEuler(m.rotation));
   });
+
   if (composer) composer.render(); else renderer.render(scene, camera);
 }
 
@@ -558,20 +595,17 @@ function normalizeModel(model, brand, cfgOverride) {
   const col  = COLORS[currentColorIdx];
   const _pm  = paintMetal(col.metal);
   const _pr  = col.finish === 'Matte' ? col.rough : Math.max(col.rough, 0.16);
-  // Mate/Satinado no "brillan" con luz propia → más contraste de sombras;
-  // Gloss/Metallic/Pearl mantienen un leve resplandor que realza el color
-  const _ei  = (col.finish === 'Matte' || col.finish === 'Satin') ? 0.04 : 0.18;
   const _cc  = clearcoatForFinish(col.finish);
   const mkPaint = () => new THREE.MeshPhysicalMaterial({
     color: new THREE.Color(col.hex), metalness: _pm, roughness: _pr,
-    envMapIntensity: 2.0,
-    emissive: new THREE.Color(col.hex), emissiveIntensity: _ei,
+    envMapIntensity: 2.4,
+    emissive: new THREE.Color(col.hex), emissiveIntensity: 0.04,
     clearcoat: _cc.cc, clearcoatRoughness: _cc.ccr,
     transparent: xrayMode, opacity: xrayMode ? XRAY_OPACITY : 1.0, depthWrite: !xrayMode,
   });
-  const glbGlass   = new THREE.MeshPhysicalMaterial({ color:0x10181f, metalness:0.2, roughness:0.05, transparent:true, opacity:0.55, envMapIntensity:1.6 });
-  const glbTire    = new THREE.MeshStandardMaterial({ color:0x080808, metalness:0.0,  roughness:0.97 });
-  const glbRimMat  = new THREE.MeshStandardMaterial({ color:0xbbbbbb, metalness:0.96, roughness:0.06, envMapIntensity:1.8 });
+  const glbGlass   = new THREE.MeshPhysicalMaterial({ color:0x0d1825, metalness:0.1, roughness:0.0, transparent:true, opacity:0.42, envMapIntensity:2.2 });
+  const glbTire    = new THREE.MeshStandardMaterial({ color:0x090909, metalness:0.0,  roughness:0.88 });
+  const glbRimMat  = new THREE.MeshStandardMaterial({ color:0xd0d0d0, metalness:0.88, roughness:0.10, envMapIntensity:2.2 });
   const glbLight   = new THREE.MeshStandardMaterial({ color:0xffffff, emissive:new THREE.Color(0xffffcc), emissiveIntensity:1.8 });
   const glbLightR  = new THREE.MeshStandardMaterial({ color:0xff2200, emissive:new THREE.Color(0xff2200), emissiveIntensity:2.2 });
   const glbDark    = new THREE.MeshStandardMaterial({ color:0x101010, metalness:DEFAULT_LEATHER_FINISH.metal, roughness:DEFAULT_LEATHER_FINISH.rough });
@@ -633,7 +667,9 @@ function normalizeModel(model, brand, cfgOverride) {
       child.material = glbDark.clone(); interiorMeshes.push(child); return;
     }
     if (n.includes('chrome') || n.includes('exhaust') || n.includes('trim_metal') || n.includes('grille') || n.includes('grill') ||
-        n.includes('badge') || n.includes('emblem') || n.includes('orange')) {
+        n.includes('badge') || n.includes('emblem') || n.includes('logo') || n.includes('marque') ||
+        n.includes('horse') || n.includes('shield') || n.includes('crest') || n.includes('script') ||
+        n.includes('lettering') || n.includes('insignia') || n.includes('orange')) {
       child.material = glbChrome; return;
     }
     if (n.includes('mirror')) { child.material = glbMirror; return; }
@@ -660,21 +696,23 @@ function normalizeModel(model, brand, cfgOverride) {
         bodyMeshes.push(child);
       }
     } else {
-      // Mesh pequeño → trim/detalle → mantener material original ajustado
+      // Mesh pequeño → trim/badge/detalle → preservar material original con ajustes mínimos
       const origMat = Array.isArray(child.material) ? child.material[0] : child.material;
       if (!origMat) return;
-      // Vidrio por material
+      // Vidrio por material transparente
       if (origMat.transparent && origMat.opacity < 0.55) { child.material = glbGlass; return; }
-      // Neutralizar colores muy saturados (liveries neon)
+      // Solo neutralizar colores verdaderamente neon (liveries de carreras agresivos):
+      // s > 0.75 Y l > 0.55 — dejar intactos los colores de badges, cromados, etc.
       if (origMat.color) {
         const hsl = { h:0, s:0, l:0 };
         origMat.color.getHSL(hsl);
-        if (hsl.s > 0.35 && hsl.l > 0.14) origMat.color.setHSL(hsl.h, 0.06, 0.10);
+        if (hsl.s > 0.75 && hsl.l > 0.55) origMat.color.setHSL(hsl.h, 0.15, 0.30);
       }
       if (origMat.isMeshStandardMaterial || origMat.isMeshPhysicalMaterial) {
-        origMat.envMapIntensity = 1.2;
-        if (origMat.metalness > 0.65) origMat.metalness = 0.65;
-        if (origMat.roughness < 0.18)  origMat.roughness = 0.18;
+        // Aplicar envMap para que los detalles metálicos/cromados brillen correctamente
+        origMat.envMapIntensity = 2.0;
+        // NO limitar metalness/roughness — el badge cromado necesita ser espejo,
+        // el cuero/plastico interno necesita ser mate; respetar lo que el autor decidió
         origMat.needsUpdate = true;
       }
     }
@@ -700,10 +738,15 @@ function swapModel(model, brand) {
   if (currentModel) scene.remove(currentModel);
   currentModel = model;
   scene.add(model);
-  applyColor(currentColorIdx);
-  autoRotate = true;
-  rotY = 0.5;
+  if (customColorHex) setCustomColor(customColorHex);
+  else applyColor(currentColorIdx);
+  autoRotate = false;
+  rotY = 0.5; rotX = 0.15; dist = 8;
   updateCamera();
+  enterAnim = { t0: Date.now(), dur: 1100,
+    fromDist: 20, toDist: 8,
+    fromRotY: rotY + 0.55, toRotY: rotY,
+    fromRotX: 0.40, toRotX: rotX };
 }
 
 // ── COLOR ─────────────────────────────────────────────────────
@@ -756,8 +799,6 @@ function applyColor(idx) {
   const metal = paintMetal(col.metal);
   // Colores mate/satin con metalness bajo ya se ven bien; gloss/metallic cap a 0.45
   const rough = col.finish === 'Matte' ? col.rough : Math.max(col.rough, 0.14);
-  // Mate/Satinado sin resplandor propio → más contraste de sombras y relieve
-  const ei = (col.finish === 'Matte' || col.finish === 'Satin') ? 0.04 : 0.18;
   const cc = clearcoatForFinish(col.finish);
 
   bodyMeshes.forEach(mesh => {
@@ -768,10 +809,9 @@ function applyColor(idx) {
         mat.color.set(color);
         mat.metalness = metal;
         mat.roughness = rough;
-        mat.envMapIntensity = 2.0;
-        if (!mat.emissive) mat.emissive = new THREE.Color(0);
-        mat.emissive.set(color);
-        mat.emissiveIntensity = ei;
+        mat.envMapIntensity = 2.4;
+        if (mat.emissive) mat.emissive.set(color);
+        mat.emissiveIntensity = 0.04;
         if ('clearcoat' in mat) { mat.clearcoat = cc.cc; mat.clearcoatRoughness = cc.ccr; }
         mat.transparent = xrayMode;
         mat.opacity = xrayMode ? XRAY_OPACITY : 1.0;
@@ -779,8 +819,8 @@ function applyColor(idx) {
         mat.needsUpdate = true;
       } else {
         mesh.material = new THREE.MeshPhysicalMaterial({
-          color, metalness: metal, roughness: rough, envMapIntensity: 2.0,
-          emissive: new THREE.Color(col.hex), emissiveIntensity: ei,
+          color, metalness: metal, roughness: rough, envMapIntensity: 2.4,
+          emissive: new THREE.Color(col.hex), emissiveIntensity: 0.04,
           clearcoat: cc.cc, clearcoatRoughness: cc.ccr,
           transparent: xrayMode, opacity: xrayMode ? XRAY_OPACITY : 1.0, depthWrite: !xrayMode,
         });
@@ -792,7 +832,29 @@ function applyColor(idx) {
 // Vista de rayos X: carrocería semitransparente para revelar chasis/interior ("blueprint").
 function setXrayMode(on) {
   xrayMode = on;
-  applyColor(currentColorIdx);
+  if (customColorHex) setCustomColor(customColorHex);
+  else applyColor(currentColorIdx);
+}
+
+function setCustomColor(hex) {
+  customColorHex = hex;
+  const cc = clearcoatForFinish('Gloss');
+  const mat = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color(hex), metalness: paintMetal(0.35), roughness: 0.14,
+    envMapIntensity: 2.4,
+    emissiveIntensity: 0,
+    clearcoat: cc.cc, clearcoatRoughness: cc.ccr,
+    transparent: xrayMode, opacity: xrayMode ? XRAY_OPACITY : 1.0, depthWrite: !xrayMode,
+  });
+  bodyMeshes.forEach(m => { m.material = mat.clone(); });
+}
+
+function clearCustomColor() { customColorHex = null; }
+
+function setCinemaMode(on) {
+  cinemaMode = on;
+  if (on) { cinemaClock = 0; autoRotate = false; enterAnim = null; }
+  else autoRotate = true;
 }
 
 // ── CALIPER COLOR ─────────────────────────────────────────────
@@ -1108,4 +1170,4 @@ function captureImage(filename) {
   link.click();
 }
 
-window.Car3D = { initThree, loadModel, applyColor, applyCaliperColor, applyWheels, applyInteriorColor, buildFallback, setNightMode, setCameraView, setUnderglow, setXrayMode, captureImage, COLORS, MODEL_MAP, WHEEL_STYLES };
+window.Car3D = { initThree, loadModel, applyColor, applyCaliperColor, applyWheels, applyInteriorColor, buildFallback, setNightMode, setCameraView, setUnderglow, setXrayMode, setCustomColor, clearCustomColor, setCinemaMode, captureImage, COLORS, MODEL_MAP, WHEEL_STYLES };
