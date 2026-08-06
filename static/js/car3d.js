@@ -552,6 +552,20 @@ function loadModel(brand, model, onProgress, onDone) {
   );
 }
 
+// Radio/diámetro normalizados plausibles de una llanta (el coche entero mide
+// ~4.5 unidades de largo). Dos formas de detectar que una malla clasificada
+// como "llanta" en realidad no es una rueda aislada:
+//  - su centro está lejos de su propio origen local (el mesh guarda sus
+//    vértices en coordenadas relativas al modelo completo, no a sí mismo) →
+//    gira orbitando por fuera del coche.
+//  - la propia malla es enorme (p.ej. representa las 4 ruedas combinadas en
+//    un único mesh) → aunque su centro esté cerca del origen, al girar el
+//    borde de la malla barre un arco gigante — un "disco" que sale volando
+//    por encima del techo igualmente.
+// En ambos casos, mejor dejarla quieta que animarla.
+const MAX_PLAUSIBLE_WHEEL_RADIUS   = 0.5;
+const MAX_PLAUSIBLE_WHEEL_DIAMETER = 1.2;
+
 // Prepara una malla de llanta para el giro idle. Guarda su posición/rotación
 // originales y el centro de su geometría: en animate() se compensa la posición
 // cada frame para que la malla gire sobre el centro de su geometría (el buje)
@@ -562,16 +576,34 @@ function setupWheelSpin(mesh) {
   if (mesh.userData.spinBasePos) {
     mesh.position.copy(mesh.userData.spinBasePos);
     mesh.rotation.copy(mesh.userData.spinBaseRot);
+    if (mesh.userData.spinDisabled) return;
   } else {
     mesh.geometry.computeBoundingBox();
-    mesh.userData.spinCenter  = mesh.geometry.boundingBox.getCenter(new THREE.Vector3());
+    const center = mesh.geometry.boundingBox.getCenter(new THREE.Vector3());
+    const size   = mesh.geometry.boundingBox.getSize(new THREE.Vector3());
+    const worldScale = mesh.getWorldScale(new THREE.Vector3()).x;
+    mesh.userData.spinDisabled =
+      (center.length() * worldScale) > MAX_PLAUSIBLE_WHEEL_RADIUS ||
+      (size.length()   * worldScale) > MAX_PLAUSIBLE_WHEEL_DIAMETER;
+    mesh.userData.spinCenter  = center;
     mesh.userData.spinBasePos = mesh.position.clone();
     mesh.userData.spinBaseRot = mesh.rotation.clone();
+    if (mesh.userData.spinDisabled) return;
   }
   spinTargets.push(mesh);
 }
 
 function normalizeModel(model, brand, cfgOverride) {
+  // Los modelos GLB se cachean por archivo y pueden reutilizarse entre varias
+  // marcas/variantes (p.ej. Ferrari "296 GTB" y "Roma" comparten ferrari_488.glb).
+  // normalizeModel() se vuelve a llamar sobre ese mismo objeto ya normalizado, así
+  // que hay que resetear su transform antes de medir — si no, la caja delimitadora
+  // se mide sobre la geometría YA escalada/posicionada de la vez anterior y la
+  // escala/suelo calculados a partir de eso quedan corruptos (coche gigante o flotando).
+  model.scale.set(1, 1, 1);
+  model.position.set(0, 0, 0);
+  model.updateMatrixWorld(true);
+
   const box  = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
@@ -628,18 +660,20 @@ function normalizeModel(model, brand, cfgOverride) {
     child.castShadow = true;
     child.receiveShadow = true;
 
-    const n    = child.name.toLowerCase();
+    // Varios GLB (Porsche, Maserati, Nissan GT-R, Audi R8...) vienen de exports
+    // con nodos genéricos ("Object_12") pero materiales con nombre real
+    // ("EXT_Carpaint", "Wheel1A", "PaintTNR"...) — hay que mirar los dos sitios,
+    // si no esas piezas se quedan sin clasificar (sin pintar, o llanta del color
+    // de carrocería).
+    const origMatForName = Array.isArray(child.material) ? child.material[0] : child.material;
+    const n    = (child.name + ' ' + (origMatForName?.name || '')).toLowerCase();
     const verts = child.geometry?.attributes?.position?.count || 0;
 
-    // 1. Carrocería por nombre (modelos con meshes nombrados)
-    const isNamedBody = cfg.bodyMesh.length > 0 && cfg.bodyMesh.some(k => n.includes(k.toLowerCase()));
-    if (isNamedBody) {
-      child.material = mkPaint();
-      bodyMeshes.push(child);
-      return;
-    }
-
-    // 2. Partes especiales por nombre
+    // 1. Partes específicas primero — una señal concreta (glass/rim/caliper/luz...)
+    //    siempre pesa más que "contiene la palabra paint". Algunos assets (Ford
+    //    Mustang) sufijan CADA pieza mecánica con "_carpaint_0" (el índice de su
+    //    slot de material, no su función real) — con la carrocería mirándose primero,
+    //    los faros y el buje de la rueda salían pintados del color de carrocería.
     if (n.includes('glass') || n.includes('windscreen') || n.includes('window') || n.includes('windshield') || n.includes('crystal')) {
       child.material = glbGlass; return;
     }
@@ -674,6 +708,17 @@ function normalizeModel(model, brand, cfgOverride) {
     }
     if (n.includes('mirror')) { child.material = glbMirror; return; }
     if (n.includes('carbon')) { child.material = glbCarbon; return; }
+
+    // 2. Carrocería — por nombre de mesh (hint por marca) o por nombre de material
+    //    genérico (carpaint/coloured/paint), solo si ninguna señal específica de
+    //    arriba ha reclamado ya la pieza.
+    const isNamedBody = cfg.bodyMesh.length > 0 && cfg.bodyMesh.some(k => n.includes(k.toLowerCase()));
+    const isPaintMaterial = n.includes('carpaint') || n.includes('bodypaint') || n.includes('coloured') || n.includes('paint');
+    if (isNamedBody || isPaintMaterial) {
+      child.material = mkPaint();
+      bodyMeshes.push(child);
+      return;
+    }
 
     // 3. Para meshes sin nombre específico: usar umbral de tamaño
     //    Los paneles de carrocería exterior suelen ser los meshes más grandes

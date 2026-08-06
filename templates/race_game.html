@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <title>APEX RACE</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -15,11 +16,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Co
 #h-speed .lbl{font-size:10px;letter-spacing:5px;color:rgba(255,255,255,.35);margin-bottom:2px}
 #h-speed .lap{font-size:14px;color:#00e5ff;letter-spacing:3px;margin-top:6px}
 #h-speed .pos{font-size:36px;font-weight:900;color:#ffd700;text-shadow:0 0 14px #ffd70066}
-#h-time{position:absolute;top:18px;left:50%;transform:translateX(-50%);font-size:17px;color:#fff;letter-spacing:4px;background:rgba(0,0,0,.55);padding:7px 24px;border:1px solid rgba(255,255,255,.08);white-space:nowrap}
+#h-time{position:absolute;top:18px;left:50%;transform:translateX(-50%);font-size:17px;color:#fff;letter-spacing:4px;background:rgba(6,6,20,.6);backdrop-filter:blur(10px);padding:7px 24px;border:1px solid rgba(180,210,255,.1);white-space:nowrap}
 #h-boost{position:absolute;bottom:28px;right:28px;width:140px}
 #h-boost .blbl{font-size:9px;letter-spacing:3px;color:rgba(255,255,255,.35);text-align:right;margin-bottom:5px}
-#h-boost .btrack{height:5px;background:rgba(255,255,255,.08);border-radius:3px}
-#h-boost .bfill{height:100%;background:#ff0055;border-radius:3px;transition:width .15s,background .3s}
+#h-boost .btrack{height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+#h-boost .bfill{height:100%;background:linear-gradient(90deg,#ff2d78,#ff0055);border-radius:3px;transition:width .15s,background .3s;box-shadow:0 0 10px rgba(255,0,85,.5)}
 #h-list{position:absolute;top:18px;right:18px;display:flex;flex-direction:column;gap:3px}
 .hl-r{font-size:11px;background:rgba(0,0,0,.6);padding:3px 10px;display:flex;align-items:center;gap:7px;border-left:2px solid transparent}
 .hl-r.me{border-left-color:#ffd700}
@@ -31,10 +32,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Co
 
 /* SCREENS */
 .screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50}
-#s-menu{background:#000}
+#s-menu{
+  background:
+    radial-gradient(ellipse 900px 600px at 50% 20%, rgba(0,229,255,0.06), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 85% 85%, rgba(255,0,102,0.05), transparent 60%),
+    linear-gradient(rgba(0,229,255,0.035) 1px, transparent 1px) 0 0/56px 56px,
+    linear-gradient(90deg, rgba(0,229,255,0.035) 1px, transparent 1px) 0 0/56px 56px,
+    #030308;
+}
 #s-menu.off,#s-cd.off,#s-result.off,#s-loading.off{display:none}
 #s-cd{background:transparent;pointer-events:none;z-index:60}
-#s-result{background:rgba(0,0,0,.93)}
+#s-result{background:rgba(2,2,10,.88);backdrop-filter:blur(14px);}
 #s-loading{background:#000}
 
 /* Loading */
@@ -44,17 +52,27 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Co
 .load-pct{font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.4);margin-top:14px}
 
 /* Menu */
-.m-logo{font-size:76px;font-weight:900;letter-spacing:12px;color:#fff;text-shadow:0 0 40px rgba(255,0,85,.55);margin-bottom:4px}
+.m-logo{font-size:76px;font-weight:900;letter-spacing:12px;background:linear-gradient(100deg,#fff 35%,#ff3388 130%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 40px rgba(255,0,85,.4));margin-bottom:4px}
 .m-sub{font-size:11px;letter-spacing:6px;color:rgba(0,229,255,.45);margin-bottom:48px}
 .car-sel{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:700px;margin-bottom:32px}
-.cs-btn{padding:12px 16px;background:transparent;border:1px solid #222;color:#fff;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;min-width:125px;text-align:center;transition:all .2s}
+.cs-btn{padding:12px 16px;background:rgba(255,255,255,0.025);backdrop-filter:blur(10px);border:1px solid rgba(180,210,255,0.14);color:#fff;font-family:'Courier New',monospace;font-size:11px;cursor:pointer;min-width:125px;text-align:center;transition:all .25s cubic-bezier(.16,1,.3,1)}
+.cs-btn:hover{border-color:rgba(0,229,255,0.4);background:rgba(0,229,255,0.05);transform:translateY(-2px)}
 .cs-btn .n{font-weight:700;letter-spacing:1px;margin-bottom:4px;font-size:12px}
 .cs-btn .s{font-size:9px;color:rgba(255,255,255,.3);letter-spacing:1px}
-.go{padding:14px 56px;background:transparent;border:1px solid #ff0055;color:#ff0055;font-family:'Courier New',monospace;font-size:15px;letter-spacing:5px;cursor:pointer;transition:all .2s}
-.go:hover{background:#ff0055;color:#fff;box-shadow:0 0 24px #ff005566}
+.go{
+  padding:14px 56px;
+  background:linear-gradient(135deg,#ff2d78 0%,#ff0055 55%,#c400ff 100%);
+  border:none;color:#fff;font-family:'Courier New',monospace;font-size:15px;letter-spacing:5px;cursor:pointer;
+  transition:all .3s cubic-bezier(.16,1,.3,1);
+  box-shadow:0 10px 32px -8px rgba(255,0,85,.5);
+  position:relative;overflow:hidden;
+}
+.go::before{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);transform:skewX(-20deg);transition:left .6s cubic-bezier(.16,1,.3,1)}
+.go:hover{box-shadow:0 16px 46px -8px rgba(255,0,85,.75);transform:translateY(-2px)}
+.go:hover::before{left:130%}
 .hint{font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.18);margin-top:16px}
-.gar-badge{font-size:12px;color:#00e5ff;letter-spacing:3px;margin-bottom:16px;border:1px solid rgba(0,229,255,.25);padding:5px 16px}
-.bet-badge{font-size:12px;color:#ffd700;letter-spacing:3px;margin-bottom:16px;border:1px solid rgba(255,215,0,.3);padding:5px 16px}
+.gar-badge{font-size:12px;color:#00e5ff;letter-spacing:3px;margin-bottom:16px;border:1px solid rgba(0,229,255,.25);background:rgba(0,229,255,0.04);backdrop-filter:blur(8px);padding:5px 16px}
+.bet-badge{font-size:12px;color:#ffd700;letter-spacing:3px;margin-bottom:16px;border:1px solid rgba(255,215,0,.3);background:rgba(255,215,0,0.04);backdrop-filter:blur(8px);padding:5px 16px}
 
 /* Countdown */
 #cdn{font-size:160px;font-weight:900;color:#ffd700;text-shadow:0 0 70px #ffd700cc;opacity:0;transform:scale(1.8);transition:all .28s}
@@ -66,8 +84,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Co
 #rpos.b{color:#cd7f32}
 #rpos.l{color:#ff0055}
 #rinfo{font-size:13px;letter-spacing:2px;color:rgba(255,255,255,.4);margin:14px 0 30px;text-align:center;line-height:2.4}
-.rbtn{padding:13px 42px;background:transparent;border:1px solid #ff0055;color:#ff0055;font-family:'Courier New',monospace;font-size:13px;letter-spacing:3px;cursor:pointer;margin:6px}
-.rbtn:hover{background:#ff0055;color:#fff}
+.rbtn{padding:13px 42px;background:rgba(255,0,85,0.04);backdrop-filter:blur(8px);border:1px solid #ff0055;color:#ff0055;font-family:'Courier New',monospace;font-size:13px;letter-spacing:3px;cursor:pointer;margin:6px;transition:all .25s cubic-bezier(.16,1,.3,1)}
+.rbtn:hover{background:#ff0055;color:#fff;box-shadow:0 10px 28px -8px rgba(255,0,85,.5);transform:translateY(-2px)}
 
 /* On-screen controls */
 #ctrl{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:8px;z-index:40;pointer-events:all}
@@ -596,15 +614,15 @@ function instantiateCarModel(rawScene, cfg, colorHex, caliperHex, wheelId) {
     child.castShadow = true;
     child.receiveShadow = true;
 
-    const n = child.name.toLowerCase();
+    // Igual que en car3d.js: varios GLB (Porsche, Maserati, Nissan GT-R, Audi R8...)
+    // traen nodos genéricos ("Object_12") pero el nombre real está en el material
+    // ("EXT_Carpaint", "Wheel1A"...) — hay que mirar los dos sitios. Y las señales
+    // específicas (glass/rim/caliper/luz) van ANTES que "es pintura de carrocería":
+    // el Ford Mustang sufija cada pieza mecánica (incluidos faros y buje de rueda)
+    // con "_carpaint_0", el índice de su slot de material, no su función real.
+    const origMatForName = Array.isArray(child.material) ? child.material[0] : child.material;
+    const n = (child.name + ' ' + (origMatForName?.name || '')).toLowerCase();
     const verts = child.geometry?.attributes?.position?.count || 0;
-
-    const isNamedBody = cfg.bodyMesh.length > 0 && cfg.bodyMesh.some(k => n.includes(k.toLowerCase()));
-    if (isNamedBody) {
-      child.material = mkPaint();
-      bodyMeshes.push(child);
-      return;
-    }
 
     if (n.includes('glass') || n.includes('windscreen') || n.includes('window') || n.includes('windshield') || n.includes('crystal')) {
       child.material = glbGlass.clone(); return;
@@ -636,6 +654,14 @@ function instantiateCarModel(rawScene, cfg, colorHex, caliperHex, wheelId) {
     if (n.includes('chrome') || n.includes('exhaust') || n.includes('trim_metal') || n.includes('grille') || n.includes('grill') ||
         n.includes('badge') || n.includes('emblem') || n.includes('orange')) {
       child.material = glbChrome.clone(); return;
+    }
+
+    const isNamedBody = cfg.bodyMesh.length > 0 && cfg.bodyMesh.some(k => n.includes(k.toLowerCase()));
+    const isPaintMaterial = n.includes('carpaint') || n.includes('bodypaint') || n.includes('coloured') || n.includes('paint');
+    if (isNamedBody || isPaintMaterial) {
+      child.material = mkPaint();
+      bodyMeshes.push(child);
+      return;
     }
 
     // Sin nombre específico: umbral de tamaño
@@ -703,7 +729,21 @@ function instantiateCarModel(rawScene, cfg, colorHex, caliperHex, wheelId) {
     mesh.material.needsUpdate = true;
   });
 
-  return { model, bodyMeshes, caliperMeshes, rimMeshes, rearLightMeshes };
+  // Sub-set de llantas seguras para animar el giro al conducir (ver car3d.js
+  // setupWheelSpin para la explicación completa). Dos motivos para excluir una
+  // malla: su centro está lejos de su propio origen local (orbita fuera del
+  // coche), o la propia malla es enorme — p.ej. las 4 ruedas combinadas en un
+  // único mesh — y aunque su centro esté centrado, gira como un disco gigante
+  // por encima del techo. Mejor dejarla quieta que volando por la pista.
+  const spinSafeWheels = rimMeshes.filter(mesh => {
+    mesh.geometry.computeBoundingBox();
+    const center = mesh.geometry.boundingBox.getCenter(new THREE.Vector3());
+    const size   = mesh.geometry.boundingBox.getSize(new THREE.Vector3());
+    const worldScale = mesh.getWorldScale(new THREE.Vector3()).x;
+    return (center.length() * worldScale) <= 0.5 && (size.length() * worldScale) <= 1.2;
+  });
+
+  return { model, bodyMeshes, caliperMeshes, rimMeshes, rearLightMeshes, spinSafeWheels };
 }
 
 // ── Llama de boost procedural, colocada en la cara -Z del grupo GLB ya rotado ──
@@ -720,7 +760,14 @@ let selBuild = null; // set from URL or menu
 let garageBuild = null; // if came from garaje
 let budget = {{ user.budget }};
 const raceBet = parseInt(new URLSearchParams(location.search).get('bet') || '0', 10) || 0;
+let raceToken = null;
 function fmtEur(n) { return '€' + Math.round(n).toLocaleString('es-ES'); }
+const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
+function apiFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({'X-CSRFToken': CSRF_TOKEN}, opts.headers || {});
+  return fetch(url, opts);
+}
 
 // ═══════════════════════════════════════════════════
 // GAME STATE
@@ -843,6 +890,7 @@ class RaceCar {
       group.userData.glbGroup = glbGroup;
       group.userData.rearLightMeshes = inst.rearLightMeshes;
       group.userData.flame = flame;
+      group.userData.wheels = inst.spinSafeWheels;
 
       scene.remove(this.mesh);
       this.mesh = group;
@@ -869,7 +917,12 @@ class RaceCar {
     // wheel spin
     this.wheelRot += this.vel * 0.055;
     if (this.mesh.userData.wheels) {
-      this.mesh.userData.wheels.forEach(w => { w.rotation.y = this.wheelRot; });
+      // Eje X: es el eje del buje una vez orientada la rueda (ver rotation.z=PI/2
+      // en la construcción procedural más abajo, y car3d.js normalizeModel para
+      // los mismos GLB). rotation.y giraría la rueda como una peonza en vez de
+      // rodar — nunca se vio el efecto porque este código no se ejecutaba para
+      // ningún coche con modelo 3D real (userData.wheels no se rellenaba).
+      this.mesh.userData.wheels.forEach(w => { w.rotation.x = this.wheelRot; });
     }
     // brake lights — placeholder procedural
     const blCol = braking ? 0xff0000 : 0x440000;
@@ -1308,13 +1361,13 @@ function showResult() {
   };
   renderInfo();
 
-  if (raceBet > 0) {
+  if (raceBet > 0 && raceToken) {
     const won = pos === 1;
-    const delta = won ? raceBet : -raceBet;
-    fetch('/api/update-budget', {
+    apiFetch('/api/race/result', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ amount: delta })
+      body: JSON.stringify({ race_token: raceToken, won })
     }).then(r => r.json()).then(d => {
+      raceToken = null;
       const extra = [won ? `🏆 APUESTA GANADA: +${fmtEur(raceBet)}` : `💀 APUESTA PERDIDA: -${fmtEur(raceBet)}`];
       if (d.success) { budget = d.new_budget; extra.push(`PRESUPUESTO: ${fmtEur(budget)}`); }
       renderInfo(extra);
@@ -1384,6 +1437,15 @@ function goMenu() {
 // COUNTDOWN & START
 // ═══════════════════════════════════════════════════
 async function startCD() {
+  if (raceBet > 0) {
+    const r = await apiFetch('/api/race/start', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ bet: raceBet })
+    }).then(res => res.json());
+    if (!r.success) { alert(r.error || 'No se pudo iniciar la carrera'); return; }
+    raceToken = r.race_token;
+    budget = r.new_budget;
+  }
   hide('s-menu'); hide('s-result');
   show('s-loading');
   await initRace();

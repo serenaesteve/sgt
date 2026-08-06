@@ -45,7 +45,11 @@
   letter-spacing: 4px;
   text-transform: uppercase;
   line-height: 1;
-  text-shadow: 0 0 40px rgba(0,229,255,0.15);
+  background: linear-gradient(100deg, #fff 30%, var(--cyan) 75%, var(--pink) 110%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 30px rgba(0,229,255,0.2));
 }
 
 .g-sub { color: rgba(0,229,255,0.35); font-size: 12px; margin-top: 6px; font-family: var(--mono); letter-spacing: 2px; }
@@ -56,17 +60,17 @@
 .stats-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  border: 1px solid rgba(0,229,255,0.15);
   margin-bottom: 2.5rem;
-  background: rgba(0,229,255,0.02);
-  box-shadow: 0 0 30px rgba(0,229,255,0.04);
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .stat-cell {
-  padding: 1.4rem 1.6rem;
-  border-right: 1px solid rgba(0,229,255,0.1);
+  padding: 1.5rem 1.6rem;
+  border-right: 1px solid rgba(180,210,255,0.08);
   position: relative;
   overflow: hidden;
+  transition: background 0.3s var(--ease);
 }
 
 .stat-cell:last-child { border-right: none; }
@@ -74,12 +78,13 @@
 .stat-cell::before {
   content: '';
   position: absolute;
-  top: 0; left: 0;
+  bottom: 0; left: 0;
   height: 2px; width: 0%;
-  background: var(--cyan);
+  background: linear-gradient(90deg, var(--cyan), var(--pink));
   box-shadow: 0 0 8px var(--cyan);
-  transition: width 0.4s ease;
+  transition: width 0.4s var(--ease);
 }
+.stat-cell:hover { background: rgba(0,229,255,0.03); }
 .stat-cell:hover::before { width: 100%; }
 
 .stat-label {
@@ -108,11 +113,14 @@
 
 /* ── BUILD CARD ── */
 .build-card {
-  background: linear-gradient(160deg, rgba(7,7,22,0.98) 0%, rgba(3,3,14,0.98) 100%);
-  border: 1px solid rgba(0,229,255,0.12);
+  background: linear-gradient(165deg, var(--glass-hi), var(--glass));
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--glass-border);
+  border-radius: 3px;
   position: relative;
   overflow: hidden;
-  transition: all 0.25s;
+  transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease), border-color 0.35s var(--ease);
   cursor: default;
 }
 .build-card::before {
@@ -121,9 +129,9 @@
   transition: opacity 0.25s;
 }
 .build-card:hover {
-  border-color: rgba(0,229,255,0.3);
-  box-shadow: 0 0 24px rgba(0,229,255,0.08), 0 8px 32px rgba(0,0,0,0.4);
-  transform: translateY(-2px);
+  border-color: rgba(0,229,255,0.35);
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-4px);
 }
 .build-card:hover::before { opacity: 1.5; }
 
@@ -195,44 +203,52 @@
 }
 
 .bc-btn-race {
-  background: var(--pink); color: #fff;
-  box-shadow: 0 0 14px rgba(255,0,102,0.35);
+  background: linear-gradient(135deg, #ff2d78, var(--pink) 60%, #c400ff);
+  color: #fff;
+  box-shadow: 0 6px 18px -4px rgba(255,0,102,0.4);
 }
 .bc-btn-race:hover {
-  background: var(--pink2);
-  box-shadow: 0 0 22px rgba(255,0,102,0.6);
+  box-shadow: 0 10px 26px -4px rgba(255,0,102,0.6);
+  transform: translateY(-1px);
 }
 .bc-btn-del {
-  background: transparent;
+  background: rgba(255,255,255,0.02);
   color: var(--ash);
   border: 1px solid var(--wire);
   flex: 0 0 36px;
   display: flex; align-items: center; justify-content: center;
   font-size: 14px;
+  transition: all 0.2s var(--ease);
 }
-.bc-btn-del:hover { border-color: var(--pink); color: var(--pink); box-shadow: 0 0 8px rgba(255,0,102,0.2); }
+.bc-btn-del:hover { border-color: var(--pink); color: var(--pink); box-shadow: 0 0 8px rgba(255,0,102,0.2); transform: translateY(-1px); }
 
 /* ── EMPTY STATE ── */
 .empty {
-  background: rgba(0,229,255,0.01);
-  border: 1px dashed rgba(0,229,255,0.1);
-  padding: 6rem 2rem;
+  background: radial-gradient(ellipse 500px 300px at 50% 30%, rgba(0,229,255,0.05), transparent 70%);
+  border: 1px dashed rgba(0,229,255,0.15);
+  border-radius: 4px;
+  padding: 7rem 2rem;
   text-align: center;
   grid-column: 1 / -1;
 }
 
 .empty-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  opacity: 0.2;
-  filter: drop-shadow(0 0 10px rgba(0,229,255,0.3));
+  font-size: 3.6rem;
+  margin-bottom: 1.2rem;
+  opacity: 0.5;
+  filter: drop-shadow(0 0 24px rgba(0,229,255,0.4));
+  animation: float-icon 4s ease-in-out infinite;
+}
+@keyframes float-icon {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-8px); }
 }
 
 .empty-title {
   font-family: var(--speed);
   font-size: 2rem;
   letter-spacing: 4px;
-  color: rgba(0,229,255,0.3);
+  color: rgba(220,235,255,0.55);
   margin-bottom: 0.5rem;
 }
 
@@ -240,19 +256,20 @@
 
 /* ── CHALLENGES MODAL ── */
 .ch-card {
-  background: rgba(0,229,255,0.02);
-  border: 1px solid rgba(0,229,255,0.1);
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(180,210,255,0.08);
   border-left: 3px solid rgba(0,229,255,0.3);
+  border-radius: 2px;
   padding: 1.2rem;
   margin-bottom: 6px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  transition: all 0.2s;
+  transition: all 0.25s var(--ease);
 }
 
-.ch-card:hover { border-color: rgba(0,229,255,0.25); border-left-color: var(--cyan); background: rgba(0,229,255,0.04); }
+.ch-card:hover { border-color: rgba(0,229,255,0.25); border-left-color: var(--cyan); background: rgba(0,229,255,0.05); transform: translateX(2px); }
 .ch-card.done { opacity: 0.35; }
 
 .ch-name {
@@ -307,6 +324,7 @@
   color: #000;
   box-shadow: 0 0 20px rgba(0,229,255,0.5);
   text-shadow: none;
+  transform: translateY(-1px);
 }
 
 /* ── RACE MODAL ── */
@@ -318,13 +336,15 @@
 }
 .bet-btn {
   padding: 8px 14px;
-  background: var(--black3); border: 1px solid var(--wire);
+  background: rgba(255,255,255,0.02); border: 1px solid var(--wire);
   color: var(--ash); font-family: var(--mono); font-size: 12px;
-  cursor: pointer; transition: all 0.2s;
+  cursor: pointer; transition: all 0.2s var(--ease);
 }
 .bet-btn:hover, .bet-btn.sel {
   border-color: var(--gold); color: var(--gold);
-  background: rgba(0,229,255,0.05);
+  background: rgba(0,229,255,0.06);
+  box-shadow: 0 0 14px rgba(0,229,255,0.15);
+  transform: translateY(-1px);
 }
 
 /* Pre-race header */
@@ -332,7 +352,7 @@
   display: grid; grid-template-columns: 1fr auto 1fr;
   gap: 1rem; align-items: center; margin-bottom: 1.5rem;
 }
-.prc { background: var(--black3); border: 1px solid var(--wire); padding: 1rem; text-align: center; }
+.prc { background: rgba(255,255,255,0.02); border: 1px solid var(--wire); border-radius: 2px; padding: 1rem; text-align: center; }
 .prc-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ash); margin-bottom: 4px; }
 .prc-name { font-family: var(--speed); font-size: 1rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 2px; }
 .prc-spd { font-family: var(--mono); font-size: 2rem; color: var(--red); line-height: 1; }
@@ -368,7 +388,7 @@
     </div>
   </div>
 
-  <div class="stats-strip">
+  <div class="stats-strip glass-panel">
     <div class="stat-cell">
       <div class="stat-label">Presupuesto</div>
       <div class="stat-val mono" style="color:var(--gold);font-size:1.4rem;" id="budget-disp">€{{ "{:,.0f}".format(user.budget) }}</div>
@@ -507,21 +527,12 @@
 let budget = {{ user.budget }};
 let bet = 0, mySpd = 0, myBuildName = '', myBuild = null;
 const builds = {{ builds|tojson }};
+let challenges = {{ challenges|tojson }};
 
 const AI_RIVALS = [
   {name: 'REDLINE',  hex: '#ff3333'},
   {name: 'GHOST',    hex: '#00ccff'},
   {name: 'APEX_AI',  hex: '#aa00ff'},
-];
-
-const CHALLENGES = [
-  {id:'ch1',name:'Eficiencia máxima',  desc:'Porsche o Maserati con velocidad ≥75',       reward:250000, check:b=>b.some(x=>['Porsche','Maserati'].includes(x.brand)&&x.score_speed>=75)},
-  {id:'ch2',name:'Maestro del asfalto',desc:'Velocidad ≥90 en cualquier build',             reward:400000, check:b=>b.some(x=>x.score_speed>=90)},
-  {id:'ch3',name:'Joya del paddock',   desc:'Estética ≥88 y velocidad ≥80',                reward:350000, check:b=>b.some(x=>x.score_aesthetic>=88&&x.score_speed>=80)},
-  {id:'ch4',name:'Cuore sportivo',     desc:'Ferrari con carbon_pack y aero_kit',           reward:200000, check:b=>b.some(x=>x.brand==='Ferrari'&&x.extras&&x.extras.includes('carbon_pack')&&x.extras.includes('aero_kit'))},
-  {id:'ch5',name:'Coleccionista',      desc:'3 o más builds en el garaje',                  reward:150000, check:b=>b.length>=3},
-  {id:'ch6',name:'Hypercar Club',      desc:'Build de Bugatti o Maserati',                  reward:600000, check:b=>b.some(x=>['Bugatti','Maserati'].includes(x.brand))},
-  {id:'ch7',name:'Alcántara VIP',      desc:'Interior Alcántara Racing en cualquier build', reward:180000, check:b=>b.some(x=>x.interior_id==='alcantara')},
 ];
 
 function fmtEur(n){return '€'+Math.round(n).toLocaleString('es-ES');}
@@ -541,31 +552,31 @@ function openChallenges(){
 }
 
 function renderChallenges(){
-  const done=JSON.parse(localStorage.getItem('apex_done')||'[]');
   let html='';
-  CHALLENGES.forEach(ch=>{
-    const isDone=done.includes(ch.id);
-    const canClaim=!isDone&&ch.check(builds);
-    html+=`<div class="ch-card ${isDone?'done':''}">
+  challenges.forEach(ch=>{
+    html+=`<div class="ch-card ${ch.claimed?'done':''}">
       <div>
-        <div class="ch-name">${ch.name}${isDone?' ✓':''}</div>
+        <div class="ch-name">${ch.name}${ch.claimed?' ✓':''}</div>
         <div class="ch-desc">${ch.desc}</div>
       </div>
       <div style="text-align:right;flex-shrink:0;">
         <div class="ch-reward">${fmtEur(ch.reward)}<small>Recompensa</small></div>
-        ${canClaim?`<button class="ch-claim" onclick="claim('${ch.id}',${ch.reward})">Cobrar →</button>`:''}
+        ${ch.can_claim?`<button class="ch-claim" onclick="claim('${ch.id}')">Cobrar →</button>`:''}
       </div>
     </div>`;
   });
   document.getElementById('ch-list').innerHTML=html;
 }
 
-function claim(id,reward){
-  const done=JSON.parse(localStorage.getItem('apex_done')||'[]');
-  done.push(id);
-  localStorage.setItem('apex_done',JSON.stringify(done));
-  fetch('/api/update-budget',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount:reward})})
-    .then(r=>r.json()).then(d=>{if(d.success){budget=d.new_budget;updBudgets();renderChallenges();}});
+function claim(id){
+  apiFetch('/api/claim-challenge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({challenge_id:id})})
+    .then(r=>r.json()).then(d=>{
+      if(d.success){
+        budget=d.new_budget;updBudgets();
+        challenges=challenges.map(ch=>ch.id===id?{...ch,claimed:true,can_claim:false}:ch);
+        renderChallenges();
+      }
+    });
 }
 
 // ── RACE ──────────────────────────────────────────────
@@ -616,7 +627,7 @@ function closeMod(id){document.getElementById(id).classList.remove('open');}
 
 function delBuild(id,btn){
   if(!confirm('¿Eliminar este build?'))return;
-  fetch('/api/delete-build/'+id,{method:'DELETE'}).then(r=>r.json()).then(d=>{
+  apiFetch('/api/delete-build/'+id,{method:'DELETE'}).then(r=>r.json()).then(d=>{
     if(d.success) btn.closest('.build-card').remove();
   });
 }

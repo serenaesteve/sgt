@@ -15,6 +15,11 @@
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;overflow:hidden;}
 body{background:var(--bg);color:#e0eeff;font-family:var(--body);}
+body::after{
+  content:'';position:fixed;inset:0;z-index:5;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:0.03;mix-blend-mode:overlay;
+}
 
 /* ═══ CITY BACKGROUND ═══ */
 .city-bg{
@@ -116,7 +121,7 @@ body{background:var(--bg);color:#e0eeff;font-family:var(--body);}
   font-family:var(--speed);font-weight:700;text-transform:uppercase;
   line-height:0.86;letter-spacing:-3px;
 }
-.big-text .l1{font-size:clamp(5rem,10vw,8.5rem);color:#fff;}
+.big-text .l1{font-size:clamp(5rem,10vw,8.5rem);background:linear-gradient(100deg,#fff 40%,rgba(255,255,255,0.75));-webkit-background-clip:text;background-clip:text;color:transparent;}
 .big-text .l2{
   font-size:clamp(5rem,10vw,8.5rem);display:block;
   color:transparent;
@@ -164,12 +169,14 @@ body{background:var(--bg);color:#e0eeff;font-family:var(--body);}
 .right{
   display:flex;flex-direction:column;justify-content:center;
   padding:3rem;
-  background:linear-gradient(160deg,rgba(6,6,26,0.97) 0%,rgba(2,2,14,0.99) 100%);
+  background:linear-gradient(160deg,rgba(10,10,32,0.85) 0%,rgba(3,3,16,0.92) 100%);
+  backdrop-filter:blur(24px) saturate(140%);
+  -webkit-backdrop-filter:blur(24px) saturate(140%);
   position:relative;overflow:hidden;
 }
 
 /* Neon frame corners on form panel */
-.right::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,255,0.5),rgba(255,0,102,0.5),transparent);}
+.right::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,255,0.5),rgba(255,0,102,0.5),transparent);z-index:1;}
 
 .form-badge{
   display:inline-flex;align-items:center;gap:8px;
@@ -206,41 +213,43 @@ label{
 
 input{
   width:100%;
-  background:rgba(0,229,255,0.03);
-  border:1px solid rgba(0,229,255,0.15);
+  background:rgba(255,255,255,0.025);
+  border:1px solid rgba(180,210,255,0.14);
   border-left:2px solid rgba(0,229,255,0.5);
   color:#e0eeff;padding:13px 14px 13px 36px;
   font-family:var(--mono);font-size:14px;outline:none;
-  transition:all 0.25s;letter-spacing:1px;
+  transition:all 0.3s cubic-bezier(.16,1,.3,1);letter-spacing:1px;
 }
 input:focus{
   border-color:var(--cyan);border-left-color:var(--cyan);
   background:rgba(0,229,255,0.05);
-  box-shadow:0 0 20px rgba(0,229,255,0.12),inset 0 0 10px rgba(0,229,255,0.03);
+  box-shadow:0 0 24px rgba(0,229,255,0.15),inset 0 0 10px rgba(0,229,255,0.04);
+  transform:translateY(-1px);
 }
 input::placeholder{color:rgba(0,229,255,0.15);font-size:12px;}
 
 .btn-submit{
   width:100%;padding:15px;
-  background:linear-gradient(135deg,var(--pink) 0%,#cc0055 100%);
+  background:linear-gradient(135deg,#ff2d78 0%,var(--pink) 55%,#9900ff 100%);
   color:#fff;border:none;
   font-family:var(--speed);font-size:1rem;font-weight:700;
   letter-spacing:5px;text-transform:uppercase;cursor:pointer;
-  transition:all 0.25s;margin-top:0.8rem;
-  box-shadow:0 0 30px rgba(255,0,102,0.45),0 4px 20px rgba(255,0,102,0.2);
+  transition:all 0.3s cubic-bezier(.16,1,.3,1);margin-top:0.8rem;
+  box-shadow:0 10px 32px -8px rgba(255,0,102,0.5),0 4px 20px rgba(255,0,102,0.2);
   position:relative;overflow:hidden;
 }
 .btn-submit::after{
   content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent);
   transform:skewX(-20deg);
   animation:shine 3s ease-in-out infinite 1s;
 }
 @keyframes shine{0%,100%{left:-100%;}50%{left:150%;}}
 .btn-submit:hover{
-  box-shadow:0 0 50px rgba(255,0,102,0.65),0 4px 30px rgba(255,0,102,0.3);
-  transform:translateY(-1px);
+  box-shadow:0 16px 46px -8px rgba(255,0,102,0.7),0 4px 30px rgba(196,0,255,0.25);
+  transform:translateY(-2px);
 }
+.btn-submit:active{ transform:translateY(0) scale(0.98); }
 
 .form-footer{
   text-align:center;margin-top:1.5rem;font-size:12px;
@@ -326,6 +335,7 @@ input::placeholder{color:rgba(0,229,255,0.15);font-size:12px;}
     {% if error %}<div class="alert">⚠ {{ error }}</div>{% endif %}
 
     <form method="POST" action="{{ url_for('login') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="form-group">
         <label>Usuario</label>
         <div class="field-wrap">
